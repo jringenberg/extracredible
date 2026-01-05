@@ -8,8 +8,8 @@ A protocol where users stake cryptocurrency on belief statements to create publi
 
 ## Current Status
 
-**Phase:** Initial setup
-**Next:** Deploy testnet contracts and minimal frontend
+**Phase:** Development environment ready
+**Next:** Write tests for BeliefStake.sol
 
 ## Technical Architecture
 
@@ -60,7 +60,7 @@ User stakes $2 → BeliefStake receives USDC → Deposits to Aave → Tracks aUS
 
 ### Product Decisions
 
-- **Fixed $2 stake amount**: Simplicity over flexibility in V1, can be adjusted manually later
+- **Fixed $2 stakes in V1**: Decided against variable amounts to keep UI simple and remove "how much should I stake?" friction. Can be made variable in V2 if needed.
 - **All yield to protocol**: No user yield-sharing, pure treasury revenue model
 - **Primary signal is staker count**: Total stake is secondary - 847 people matters more than total dollars
 - **No belief-gating of data**: Everything on-chain is public, gate participation not viewing
@@ -96,13 +96,19 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 ## Open Questions
 
 1. When to allow variable stake amounts? (Stay fixed at $2 or add flexibility?)
-2. Maximum belief character count? (280 like Twitter?)
+2. Belief text character limit? (Suggest 280 chars for gas efficiency)
 3. Counter-staking feature? (stake against beliefs)
 4. How to incentivize consolidation? (prevent duplicate beliefs)
 5. When to add premium features? (analytics, API access)
 6. Token or no token long-term?
+7. Should conviction scores be updatable after staking? If yes, require additional stake + commentary?
+8. Should individual stakes have optional commentary/reasoning attached?
 
 ## Testnet Milestone (2 weeks)
+
+**Development:**
+- [x] Foundry development environment set up
+- [x] BeliefStake.sol written and compiling
 
 **Contracts:**
 - [ ] EAS schema registered on Base Sepolia
@@ -138,6 +144,15 @@ NEXT_PUBLIC_STAKE_CONTRACT=
 PRIVATE_KEY=
 ```
 
+## Session Log
+
+**Session 1 (January 05, 2026):**
+- Created repo and PROJECT.md
+- Wrote BeliefStake.sol (basic escrow, $2 fixed stakes)
+- Installed Foundry and OpenZeppelin
+- Contract compiles successfully
+- Next: Write Foundry tests
+
 ## Repository Structure
 ```
 onrecord/
@@ -169,6 +184,6 @@ onrecord/
 
 ---
 
-**Last Updated:** [Date]
-**Current Phase:** Initial setup
-**Next Action:** Create contracts/ folder and write BeliefStake.sol
+**Last Updated:** January 05, 2026
+**Current Phase:** Development environment ready
+**Next Action:** Write Foundry tests for BeliefStake.sol
