@@ -78,6 +78,7 @@ User stakes $2 → BeliefStake receives USDC → Deposits to Aave → Tracks aUS
 **Fixed stake amount:** $2 USDC per belief (can be manually adjusted later)
 
 **Yield model:**
+
 - All staked USDC deposited to Aave
 - 100% of yield goes to protocol treasury
 - Users always get back exactly their $2 principal on unstake
@@ -106,15 +107,18 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 ## Testnet Milestone (2 weeks)
 
 **Development:**
+
 - [x] Foundry development environment set up
 - [x] BeliefStake.sol written and compiling
 
 **Contracts:**
+
 - [ ] EAS schema registered on Base Sepolia
-- [ ] BeliefStake.sol deployed (with Aave yield to treasury)
+- [x] BeliefStake.sol deployed (escrow only, no yield yet)
 - [ ] 10 test beliefs created
 
 **Frontend:**
+
 - [ ] One page deployed to Vercel
 - [ ] Top 3 beliefs visible
 - [ ] Input field + "Back This $2" button
@@ -122,21 +126,23 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 - [ ] Create belief flow works end-to-end
 
 **Indexing:**
+
 - [ ] The Graph subgraph deployed
 - [ ] Query returns beliefs with stakes + staker counts
 - [ ] Frontend uses subgraph for display
 
 ## Development Setup
 
-*(To be filled in once contracts deployed)*
-
 **Contract Addresses (Base Sepolia):**
-- EAS Registry: 
-- Belief Schema UID:
-- BeliefStake:
+
+- EAS Registry: 0x4200000000000000000000000000000000000021
+- Belief Schema UID: (not yet registered)
+- MockUSDC: 0xA5c82FCFBe1274166D01B1f3cd9f69Eb79bd74E8
+- BeliefStake: 0xa37c9A89375134374a866EeD3E57EAF2789d9613
 
 **Environment Variables:**
-```
+
+```text
 NEXT_PUBLIC_BASE_RPC_URL=
 NEXT_PUBLIC_BELIEF_SCHEMA_UID=
 NEXT_PUBLIC_STAKE_CONTRACT=
@@ -146,6 +152,7 @@ PRIVATE_KEY=
 ## Session Log
 
 **Session 1 (January 05, 2026):**
+
 - Created repo and PROJECT.md
 - Wrote BeliefStake.sol (basic escrow, $2 fixed stakes)
 - Installed Foundry and OpenZeppelin
@@ -153,12 +160,14 @@ PRIVATE_KEY=
 - Next: Write Foundry tests
 
 **Session 2 (January 9, 2025):**
+
 - Explored naming, decided on believeth.xyz (runner-up: publicbelief.xyz)
 - Removed conviction score from schema - friction kills momentum, stake itself is the confidence signal
 - Clarified core thesis: beliefs are constraint commitments made coordinable through cost
 - Next: Set up Next.js frontend scaffold, write contract tests
 
 **Session 3 (January 9, 2025):**
+
 - Wrote and passed all Foundry tests for BeliefStake.sol
 - Set up testnet wallet (0x7a77...)
 - Learned critical security lesson: never paste private keys in commands
@@ -166,8 +175,20 @@ PRIVATE_KEY=
 - Hit confusion with .env variable naming conventions (NEXT_PUBLIC_ vs plain vars)
 - Next: Clarify .env setup, deploy MockUSDC to testnet, then deploy BeliefStake
 
+**Session 4 (January 9, 2026):**
+
+- Debugged .env and Foundry configuration extensively
+- Learned: `forge create` needs `--rpc-url` before contract path, or use `ETH_RPC_URL` env var
+- Set up encrypted keystore with `cast wallet import testnet` (more secure than raw private keys)
+- Successfully deployed MockUSDC to Base Sepolia: 0xA5c82FCFBe1274166D01B1f3cd9f69Eb79bd74E8
+- Successfully deployed BeliefStake to Base Sepolia: 0xa37c9A89375134374a866EeD3E57EAF2789d9613
+- Tested contract functionality: staked $2 on test attestation UID, verified with getStake()
+- Contract is live and working on testnet!
+- Next: Register EAS schema, build frontend
+
 ## Repository Structure
-```
+
+```text
 onrecord/
 ├── PROJECT.md              # This file - single source of truth
 ├── README.md               # Public-facing documentation
@@ -190,13 +211,13 @@ onrecord/
 
 ## Resources
 
-- EAS Docs: https://docs.attest.sh
-- Base Sepolia: https://sepolia.basescan.org
-- The Graph: https://thegraph.com
-- Aave V3: https://docs.aave.com
+- EAS Docs: <https://docs.attest.sh>
+- Base Sepolia: <https://sepolia.basescan.org>
+- The Graph: <https://thegraph.com>
+- Aave V3: <https://docs.aave.com>
 
 ---
 
-**Last Updated:** January 9, 2025
+**Last Updated:** January 9, 2026
 **Current Phase:** Development environment ready
 **Next Action:** Write Foundry tests for BeliefStake.sol
