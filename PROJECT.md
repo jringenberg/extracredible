@@ -1,4 +1,4 @@
-# OnRecord
+# Legitify
 
 ## Core Concept
 
@@ -8,8 +8,9 @@ A protocol where users stake cryptocurrency on belief statements to create publi
 
 ## Current Status
 
-**Phase:** Development environment ready
-**Next:** Write tests for BeliefStake.sol
+**Phase:** Contracts deployed + escrow staking working on Base Sepolia (no yield yet)
+**Tests:** Foundry tests written and passing for `BeliefStake.sol`
+**Next:** Register EAS schema on Base Sepolia and set `NEXT_PUBLIC_BELIEF_SCHEMA_UID`, then build a minimal frontend create+stake flow
 
 ## Technical Architecture
 
@@ -55,7 +56,7 @@ User stakes $2 → BeliefStake receives USDC → Deposits to Aave → Tracks aUS
 - **EAS for attestations** (not custom contracts): Composability and established standard over full control
 - **Separate stake contract** (not EAS resolver): Flexibility to upgrade stake logic without touching attestation layer
 - **No category field in schema**: Keep tight, categories can be frontend tags
-- **Conviction field included**: Worth the gas for interesting signal (staking at 60% vs 95% confidence)
+- **No conviction field in schema**: Removed to reduce friction; the stake itself is the confidence signal
 - **Swappable yield module**: Don't hard-code Aave, use interface so strategy can change
 
 ### Product Decisions
@@ -159,14 +160,14 @@ PRIVATE_KEY=
 - Contract compiles successfully
 - Next: Write Foundry tests
 
-**Session 2 (January 9, 2025):**
+**Session 2 (January 9, 2026):**
 
 - Explored naming, decided on believeth.xyz (runner-up: publicbelief.xyz)
 - Removed conviction score from schema - friction kills momentum, stake itself is the confidence signal
 - Clarified core thesis: beliefs are constraint commitments made coordinable through cost
 - Next: Set up Next.js frontend scaffold, write contract tests
 
-**Session 3 (January 9, 2025):**
+**Session 3 (January 9, 2026):**
 
 - Wrote and passed all Foundry tests for BeliefStake.sol
 - Set up testnet wallet (0x7a77...)
@@ -218,6 +219,6 @@ onrecord/
 
 ---
 
-**Last Updated:** January 9, 2026
-**Current Phase:** Development environment ready
-**Next Action:** Write Foundry tests for BeliefStake.sol
+**Last Updated:** January 12, 2026
+**Current Phase:** Testnet integration (schema + minimal frontend)
+**Next Action:** Register EAS schema on Base Sepolia, then wire `NEXT_PUBLIC_BELIEF_SCHEMA_UID` into the frontend
