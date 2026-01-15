@@ -3,16 +3,15 @@
 import { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
-import { decodeAbiParameters, encodeAbiParameters, parseAbiItem } from 'viem';
+import { decodeAbiParameters, encodeAbiParameters } from 'viem';
+import { getBeliefs } from '@/lib/subgraph';
 import {
   CONTRACTS,
   EAS_ABI,
   EAS_WRITE_ABI,
-  BELIEF_STAKE_ABI,
   BELIEF_STAKE_WRITE_ABI,
   ERC20_ABI,
   STAKE_AMOUNT,
-  GENESIS_BELIEF_UID,
 } from '@/lib/contracts';
 
 export default function Home() {
@@ -24,8 +23,15 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [beliefs, setBeliefs] = useState<
-    Array<{ uid: string; text: string; stakers: number }>
+    Array<{
+      id: string;
+      totalStaked: string;
+      stakerCount: number;
+      createdAt: string;
+    }>
   >([]);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [beliefTexts, setBeliefTexts] = useState<Record<string, string>>({});
   const statusClass = status.startsWith('✅')
     ? 'status success'
     : status.startsWith('❌')
@@ -34,89 +40,72 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchBeliefs() {
-      if (!publicClient) return;
-
       try {
-        const currentBlock = await publicClient.getBlockNumber();
-        const fromBlock = currentBlock > 10000n ? currentBlock - 10000n : 0n;
-
-        // Get all Staked events from the BeliefStake contract
-        const stakedEvents = await publicClient.getLogs({
-          address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
-          event: parseAbiItem(
-            'event Staked(bytes32 indexed attestationUID, address indexed staker, uint256 amount, uint256 timestamp)'
-          ),
-          fromBlock,
-          toBlock: 'latest',
-        });
-
-        // Extract unique attestation UIDs
-        const uniqueUIDs = [
-          ...new Set(
-            stakedEvents.map(
-              (event) => event.args.attestationUID as `0x${string}`
-            )
-          ),
-        ];
-
-        const beliefUIDs =
-          uniqueUIDs.length > 0
-            ? uniqueUIDs
-            : [GENESIS_BELIEF_UID as `0x${string}`];
-
-        console.log('Found beliefs with stakes:', beliefUIDs);
-
-        // Fetch each belief's data
-        const fetchedBeliefs = await Promise.all(
-          beliefUIDs.map(async (uid) => {
-            try {
-              // Fetch attestation
-              const attestation = await publicClient.readContract({
-                address: CONTRACTS.EAS_REGISTRY as `0x${string}`,
-                abi: EAS_ABI,
-                functionName: 'getAttestation',
-                args: [uid],
-              });
-
-              // Decode belief text
-              const decoded = decodeAbiParameters(
-                [{ name: 'belief', type: 'string' }],
-                attestation.data as `0x${string}`
-              );
-
-              // Fetch staker count
-              const count = await publicClient.readContract({
-                address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
-                abi: BELIEF_STAKE_ABI,
-                functionName: 'getStakerCount',
-                args: [uid],
-              });
-
-              return {
-                uid,
-                text: decoded[0],
-                stakers: Number(count),
-              };
-            } catch (error) {
-              console.error(`Error fetching belief ${uid}:`, error);
-              return null;
-            }
-          })
-        );
-
-        // Filter out any failed fetches and sort by staker count (descending)
-        const validBeliefs = fetchedBeliefs
-          .filter((b): b is NonNullable<typeof b> => b !== null)
-          .sort((a, b) => b.stakers - a.stakers);
-
-        setBeliefs(validBeliefs);
+        const fetchedBeliefs = await getBeliefs();
+        setBeliefs(fetchedBeliefs);
+        setVisibleCount(fetchedBeliefs.length);
       } catch (error) {
         console.error('Error fetching beliefs:', error);
       }
     }
 
     fetchBeliefs();
-  }, [publicClient]);
+  }, []);
+
+  useEffect(() => {
+    async function fetchBeliefTexts() {
+      if (!publicClient || beliefs.length === 0) return;
+
+      const missingIds = beliefs
+        .map((belief) => belief.id)
+        .filter((id) => !beliefTexts[id]);
+
+      if (missingIds.length === 0) return;
+
+      try {
+        const entries = await Promise.all(
+          missingIds.map(async (id) => {
+            try {
+              const attestation = await publicClient.readContract({
+                address: CONTRACTS.EAS_REGISTRY as `0x${string}`,
+                abi: EAS_ABI,
+                functionName: 'getAttestation',
+                args: [id as `0x${string}`],
+              });
+
+              const data = attestation.data as `0x${string}`;
+              if (!data || data === '0x') {
+                return [id, '[Test stake - no belief text]'] as const;
+              }
+
+              const decoded = decodeAbiParameters(
+                [{ name: 'belief', type: 'string' }],
+                data
+              );
+              const decodedText = decoded[0] ?? '';
+
+              return [
+                id,
+                decodedText || '[Test stake - no belief text]',
+              ] as const;
+            } catch (error) {
+              console.error(`Error fetching belief ${id}:`, error);
+              return [id, '[Test stake - no belief text]'] as const;
+            }
+          })
+        );
+
+        setBeliefTexts((prev) => ({
+          ...prev,
+          ...Object.fromEntries(entries),
+        }));
+      } catch (error) {
+        console.error('Error fetching belief text:', error);
+      }
+    }
+
+    fetchBeliefTexts();
+  }, [beliefs, beliefTexts, publicClient]);
 
   async function handleCreateAndStake() {
     if (!walletClient || !publicClient || !address) return;
@@ -226,27 +215,45 @@ export default function Home() {
       </div>
       <main className="page">
         <header className="page-header">
-          <h1 className="page-title">Popular beliefs</h1>
+          <h1 className="page-title">Popular Beliefs</h1>
         </header>
 
         <section className="beliefs">
           <div className="belief-list">
-            {beliefs.map((b) => (
-              <article key={b.uid} className="belief-row">
-                <div className="belief-core">
-                  <aside className="belief-amount">
-                    <span className="amount-value">${b.stakers * 2}</span>
-                    <span className="amount-label">staked</span>
-                  </aside>
-                  <div className="belief-body">
-                    <p className="belief-text">{b.text}</p>
+            {beliefs.slice(0, visibleCount).map((belief) => {
+              const totalStaked = BigInt(belief.totalStaked || '0');
+              const dollars = Number(totalStaked) / 1_000_000;
+              const dollarsLabel = `$${Math.floor(dollars)}`;
+              const text =
+                beliefTexts[belief.id] || '[Test stake - no belief text]';
+
+              return (
+                <article key={belief.id} className="belief-row">
+                  <div className="belief-core">
+                    <aside className="belief-amount">
+                      <span className="amount-value">{dollarsLabel}</span>
+                      <span className="amount-label">staked</span>
+                    </aside>
+                    <div className="belief-body">
+                      <p className="belief-text">{text}</p>
+                    </div>
                   </div>
-                </div>
-                <button type="button" className="belief-cta" disabled>
-                  + $2
-                </button>
-              </article>
-            ))}
+                  <button type="button" className="belief-cta" disabled>
+                    + $2
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+          <div className="beliefs-more">
+            <button
+              type="button"
+              className="load-more"
+              onClick={() => setVisibleCount((count) => count + 5)}
+              disabled={beliefs.length <= visibleCount}
+            >
+              Load more
+            </button>
           </div>
         </section>
 

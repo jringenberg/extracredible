@@ -1,29 +1,18 @@
-type OwnershipTransferred @entity(immutable: true) {
-  id: Bytes!
-  previousOwner: Bytes! # address
-  newOwner: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+type Belief @entity(immutable: false) {
+  id: Bytes! # attestation UID
+  totalStaked: BigInt!
+  stakerCount: Int!
+  createdAt: BigInt!
+  stakes: [Stake!]! @derivedFrom(field: "belief")
 }
 
-type Staked @entity(immutable: true) {
-  id: Bytes!
-  attestationUID: Bytes! # bytes32
-  staker: Bytes! # address
-  amount: BigInt! # uint256
-  timestamp: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type Unstaked @entity(immutable: true) {
-  id: Bytes!
-  attestationUID: Bytes! # bytes32
-  staker: Bytes! # address
-  amount: BigInt! # uint256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
+type Stake @entity(immutable: false) {
+  id: ID! # attestationUID-stakerAddress
+  belief: Belief!
+  staker: Bytes!
+  amount: BigInt!
+  stakedAt: BigInt!
+  unstakedAt: BigInt # null if still active
+  active: Boolean!
   transactionHash: Bytes!
 }

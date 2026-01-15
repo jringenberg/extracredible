@@ -73,6 +73,22 @@ body {
   gap: 16px;
 }
 
+.beliefs-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.load-more {
+  border: 1px solid var(--border);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: var(--font-geist);
+  font-size: 15px;
+  cursor: pointer;
+}
+
 .belief-row {
   display: flex;
   align-items: stretch;

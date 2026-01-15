@@ -3,51 +3,65 @@ import {
   Staked as StakedEvent,
   Unstaked as UnstakedEvent
 } from "../generated/BeliefStake/BeliefStake"
-import { OwnershipTransferred, Staked, Unstaked } from "../generated/schema"
+import { Belief, Stake } from "../generated/schema"
 
 export function handleOwnershipTransferred(
   event: OwnershipTransferredEvent
 ): void {
-  let entity = new OwnershipTransferred(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.previousOwner = event.params.previousOwner
-  entity.newOwner = event.params.newOwner
-
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
-
-  entity.save()
 }
 
 export function handleStaked(event: StakedEvent): void {
-  let entity = new Staked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.attestationUID = event.params.attestationUID
-  entity.staker = event.params.staker
-  entity.amount = event.params.amount
-  entity.timestamp = event.params.timestamp
+  let belief = Belief.load(event.params.attestationUID)
+  if (belief == null) {
+    belief = new Belief(event.params.attestationUID)
+    belief.totalStaked = event.params.amount
+    belief.stakerCount = 1
+    belief.createdAt = event.params.timestamp
+  } else {
+    belief.totalStaked = belief.totalStaked.plus(event.params.amount)
+    belief.stakerCount = belief.stakerCount + 1
+  }
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  let stakeId =
+    event.params.attestationUID.toHexString() +
+    "-" +
+    event.params.staker.toHexString()
+  let stake = new Stake(stakeId)
+  stake.belief = belief.id
+  stake.staker = event.params.staker
+  stake.amount = event.params.amount
+  stake.stakedAt = event.params.timestamp
+  stake.unstakedAt = null
+  stake.active = true
+  stake.transactionHash = event.transaction.hash
 
-  entity.save()
+  belief.save()
+  stake.save()
 }
 
 export function handleUnstaked(event: UnstakedEvent): void {
-  let entity = new Unstaked(
-    event.transaction.hash.concatI32(event.logIndex.toI32())
-  )
-  entity.attestationUID = event.params.attestationUID
-  entity.staker = event.params.staker
-  entity.amount = event.params.amount
+  let belief = Belief.load(event.params.attestationUID)
+  if (belief == null) {
+    return
+  }
 
-  entity.blockNumber = event.block.number
-  entity.blockTimestamp = event.block.timestamp
-  entity.transactionHash = event.transaction.hash
+  let stakeId =
+    event.params.attestationUID.toHexString() +
+    "-" +
+    event.params.staker.toHexString()
+  let stake = Stake.load(stakeId)
+  if (stake == null) {
+    return
+  }
 
-  entity.save()
+  stake.active = false
+  stake.unstakedAt = event.block.timestamp
+
+  belief.totalStaked = belief.totalStaked.minus(event.params.amount)
+  if (belief.stakerCount > 0) {
+    belief.stakerCount = belief.stakerCount - 1
+  }
+
+  belief.save()
+  stake.save()
 }
