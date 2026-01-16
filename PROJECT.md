@@ -6,11 +6,15 @@ A protocol where users stake cryptocurrency on belief statements to create publi
 
 **Key insight:** Belief without cost is infinite. Belief with sustained cost over time is the rarest signal. Every day you maintain a stake, you're actively choosing to keep your attention and capital on this claim rather than moving to something else.
 
+**Core principle:** $2 is a CAPTCHA, not a signal amplifier. One stake per person per belief. The signal is binary commitment, not wealth. 847 people backing a belief > 1 whale with $1,694.
+
 ## Current Status
 
-**Phase:** Testnet integration (attestation + stake flow working on Base Sepolia)
-**Tests:** Foundry tests written and passing for `BeliefStake.sol`
-**Next:** Build minimal frontend for create+stake flow
+**Phase:** Testnet MVP complete - full create + stake flow working end-to-end on Base Sepolia
+**Tests:** Foundry tests passing for `BeliefStake.sol`
+**Frontend:** Next.js app running, wallet connection + create belief + stake working
+**Subgraph:** Deployed and indexing on The Graph Studio
+**Next:** Enable staking on existing beliefs, add unstake UI, build account/belief detail pages
 
 ## Technical Architecture
 
@@ -62,6 +66,9 @@ User stakes $2 → BeliefStake receives USDC → Deposits to Aave → Tracks aUS
 ### Product Decisions
 
 - **Fixed $2 stakes in V1**: Decided against variable amounts to keep UI simple and remove "how much should I stake?" friction. Can be made variable in V2 if needed.
+- **$2 as CAPTCHA, not signal amplifier**: One stake per account per belief. More money only proves disposable income, not conviction. The $2 is proof you're real and willing to commit - the binary signal is what matters.
+- **No multiple stakes on same belief**: Contract enforces one $2 stake per user per belief. Can't "double down" to show more conviction. 847 people > 1 whale with $1,694.
+- **All-or-nothing unstake**: When you unstake, you withdraw your entire $2 position. No partial withdrawals.
 - **All yield to protocol**: No user yield-sharing, pure treasury revenue model
 - **Primary signal is staker count**: Total stake is secondary - 847 people matters more than total dollars
 - **No belief-gating of data**: Everything on-chain is public, gate participation not viewing
@@ -97,40 +104,97 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 
 ## Open Questions
 
-1. When to allow variable stake amounts? (Stay fixed at $2 or add flexibility?)
-2. Belief text character limit? (Suggest 280 chars for gas efficiency)
-3. Counter-staking feature? (stake against beliefs)
-4. How to incentivize consolidation? (prevent duplicate beliefs)
-5. When to add premium features? (analytics, API access)
-6. Token or no token long-term?
-7. Should individual stakes have optional commentary/reasoning attached?
+1. ~~When to allow variable stake amounts?~~ **DECIDED:** Stay fixed at $2 forever. It's a CAPTCHA, not a signal amplifier.
+2. ~~Multiple stakes per user per belief?~~ **DECIDED:** No. One $2 stake per account per belief. Binary signal only.
+3. Belief text character limit? (Suggest 280 chars for gas efficiency)
+4. Counter-staking feature? (stake against beliefs)
+5. How to incentivize consolidation? (prevent duplicate beliefs)
+6. When to add premium features? (analytics, API access)
+7. Token or no token long-term?
+8. Should individual stakes have optional commentary/reasoning attached?
 
-## Testnet Milestone (2 weeks)
+## Testnet Milestone - COMPLETE ✅
 
 **Development:**
 
 - [x] Foundry development environment set up
 - [x] BeliefStake.sol written and compiling
+- [x] Foundry tests passing
 
 **Contracts:**
 
 - [x] EAS schema registered on Base Sepolia
 - [x] BeliefStake.sol deployed (escrow only, no yield yet)
-- [x] 1 test belief created (need 9 more)
+- [x] MockUSDC deployed for testing
+- [x] Genesis belief created and staked
 
 **Frontend:**
 
-- [ ] One page deployed to Vercel
-- [ ] Top 3 beliefs visible
-- [ ] Input field + "Back This $2" button
-- [ ] Wallet connection (Privy or wagmi)
-- [ ] Create belief flow works end-to-end
+- [x] Next.js app running on localhost:3000
+- [x] Wallet connection working (RainbowKit + wagmi)
+- [x] Top beliefs visible (sorted by stake amount)
+- [x] Input field + "+$2" button
+- [x] Create belief flow works end-to-end
+- [x] Chrome extension error suppression added
+- [x] Vercel production deployment with custom domains (believeth.xyz, legitify.xyz)
 
 **Indexing:**
 
-- [ ] The Graph subgraph deployed
-- [ ] Query returns beliefs with stakes + staker counts
-- [ ] Frontend uses subgraph for display
+- [x] The Graph subgraph deployed to Graph Studio
+- [x] Query returns beliefs with stakes + staker counts
+- [x] Frontend uses subgraph for display
+
+## Next Phase: Complete Core Features
+
+**Immediate Priorities (in order):**
+
+1. **Enable staking on existing beliefs** - The "+$2" buttons on belief list currently disabled
+2. **Add unstake flow** - Contract has `unstake()` function, need UI + flow
+3. **Build account page** - `/account/[address]` showing user's beliefs + their stakes
+4. **Build belief detail page** - `/belief/[uid]` showing single belief + all activity
+5. **Add view toggles** - Chronological vs. by-stake sorting
+6. **Styling improvements** - Polish current UI
+7. **Yield integration (Aave)** - Generate protocol revenue from staked capital
+
+**Missing Features for V1:**
+
+- Unstaking UI and flow
+- Staking on existing beliefs (not just creating new ones)
+- Account pages (see all beliefs you've backed)
+- Belief detail pages (see all stakers + activity timeline)
+- Different sort/filter views (newest, most staked, etc.)
+- Activity feeds
+- Yield generation strategy (Aave USDC deposits)
+
+## Mainnet Readiness
+
+**Blockers for mainnet:**
+
+1. **Yield Integration** - Need Aave V3 integration for USDC → aUSDC deposits
+   - Swappable yield module interface (already designed)
+   - AaveYieldStrategy implementation
+   - Test on Base mainnet with real USDC
+   - Protocol treasury for yield collection
+
+2. **Real USDC** - Switch from MockUSDC to actual USDC on Base
+   - Base mainnet USDC: 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+
+3. **Contract Audit** - Security review before mainnet deployment
+   - Especially important for yield/Aave integration
+   - ReentrancyGuard and access controls verified
+
+4. **Mainnet Subgraph** - Deploy subgraph to index Base mainnet
+   - Frontend already deployed to production (believeth.xyz)
+
+5. **Gas Cost Testing** - Verify costs acceptable on mainnet
+   - Current estimates: ~$0.15-0.25 for create+stake
+   - Aave integration adds ~$0.10 per transaction
+
+**Testnet is sufficient for:**
+- All UI/UX development
+- Feature testing
+- User flow validation
+- Community testing
 
 ## Development Setup
 
@@ -144,6 +208,16 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 - MockUSDC: 0xA5c82FCFBe1274166D01B1f3cd9f69Eb79bd74E8
 - BeliefStake: 0xa37c9A89375134374a866EeD3E57EAF2789d9613
 
+**The Graph:**
+- Deploy Key: c8318ab3ea00f0ed2835201278fa5cbe
+- Status: Deployed and indexing
+- Subgraph queries: Beliefs with stakes, staker counts, timestamps
+
+**Production URLs:**
+- Primary: https://believeth.xyz
+- Alt domain: https://legitify.xyz
+- Vercel deployment: believes-d88dc1v71-jringenbergs-projects.vercel.app
+
 **Development Wallet:**
 - Address: 0x7A7798cdc11cCeFDaa5aA7b07bb076280a4e4c3F
 
@@ -152,17 +226,16 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 - Genesis Belief Text: "costly signals prove conviction"
 - First Stake: $2 USDC by 0x7A7798cdc11cCeFDaa5aA7b07bb076280a4e4c3F
 
-**Contract Addresses (Base Sepolia):**
-
-See **Contract Addresses & Important Info** above.
-
 **Environment Variables:**
 
 ```text
-NEXT_PUBLIC_BASE_RPC_URL=
-NEXT_PUBLIC_BELIEF_SCHEMA_UID=
-NEXT_PUBLIC_STAKE_CONTRACT=
-PRIVATE_KEY=
+# Frontend (.env.local)
+NEXT_PUBLIC_SUBGRAPH_URL=<The Graph Studio endpoint>
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=<WalletConnect project ID>
+
+# Deployment scripts (.env)
+PRIVATE_KEY=<encrypted keystore via cast wallet>
+ETH_RPC_URL=https://sepolia.base.org
 ```
 
 ## Session Log
@@ -211,6 +284,17 @@ PRIVATE_KEY=
 - Updated testnet wallet address to correct value: 0x7A7798cdc11cCeFDaa5aA7b07bb076280a4e4c3F
 - Next: Build minimal frontend for create+stake flow
 
+**Session 6 (January 16, 2026):**
+
+- Got Next.js dev server running on localhost:3000
+- Fixed noisy Chrome extension errors with global error suppression
+- Confirmed end-to-end flow working: create belief → stake $2 → appears in subgraph
+- Verified subgraph deployed and indexing on The Graph Studio
+- Confirmed production deployment live at believeth.xyz and legitify.xyz
+- Assessed current state: testnet MVP complete, ready for feature expansion
+- Updated PROJECT.md with accurate status and roadmap
+- Next priorities: Enable staking on existing beliefs, add unstake UI, build account/belief pages
+
 ## Repository Structure
 
 ```text
@@ -243,6 +327,6 @@ believeth/
 
 ---
 
-**Last Updated:** January 12, 2026
-**Current Phase:** Testnet integration (schema + minimal frontend)
-**Next Action:** Build minimal frontend for create+stake flow
+**Last Updated:** January 16, 2026
+**Current Phase:** Feature expansion - complete core functionality
+**Next Action:** Enable staking on existing beliefs + add unstake flow

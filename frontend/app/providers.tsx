@@ -5,6 +5,7 @@ import { WagmiProvider } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { ChainGuard } from './ChainGuard';
+import { ErrorSuppressor } from './ErrorSuppressor';
 
 const walletConnectProjectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ??
@@ -29,6 +30,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider appInfo={appInfo} initialChain={baseSepolia}>
+          <ErrorSuppressor />
           <ChainGuard />
           {children}
         </RainbowKitProvider>
