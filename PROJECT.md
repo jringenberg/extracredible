@@ -407,6 +407,48 @@ ETH_RPC_URL=https://sepolia.base.org
 - ✅ Mobile wallet support improvements
 - ✅ Complete visual design implementation
 
+**Session 7 Continued (January 21, 2026):**
+
+**Bug Fixes & State Management:**
+- Fixed critical userStakes state bug: changed from replacing to merging state updates
+- Issue: after unstake, useEffect would overwrite immediate state updates with stale subgraph data
+- Solution: `setUserStakes((prev) => ({ ...prev, ...Object.fromEntries(stakeChecks) }))`
+- Added defensive checks to prevent double-staking or invalid unstake attempts
+- Better error messages: "You have already staked" / "You do not have an active stake"
+
+**Processing Delays & Progress UX:**
+- Added 5-second processing animation after stake/unstake transactions complete
+- Gives subgraph time to index before refreshing UI (~10 attempts × 500ms)
+- Progress bar animates from 75% to 100% with "Processing your stake/unstake..." message
+- Prevents race conditions where UI updates before blockchain data is indexed
+- Ensures beliefs properly disappear/update after actions complete
+
+**Transaction Clarity:**
+- Added transaction counters to create flow for better UX
+- "Creating attestation (TX 1 of 3)..."
+- "Approving USDC (TX 2 of 3)..."
+- "Staking $2 (TX 3 of 3)..."
+- Users now know exactly how many wallet interactions to expect
+
+**Subgraph Data Integrity:**
+- Fixed hash truncation bug in subgraph code
+- Issue: raw Bytes type as entity ID could lose leading zeros (65 chars instead of 66)
+- Solution: explicitly convert with `.toHexString()` before using as ID
+- Ensures all attestation UIDs are properly formatted 0x + 64 hex chars
+
+**Character Counter Implementation:**
+- Auto-growing textarea for belief creation (no fixed height)
+- Character counter (n/280) appears above input when focused
+- Right-aligned, matches Helvetica 0.9rem uppercase styling
+- Paste handling truncates to 280 characters automatically
+- Clean implementation using `useRef` and `useEffect` for height adjustment
+
+**UI Polish & Spacing:**
+- Reduced hero/compose title margin-bottom to compensate for character counter space
+- Tighter progress message spacing (0.25rem margin, line-height 1.2)
+- Different progress bar spacing for compose section (1rem) vs belief cards (0rem inside wrapper)
+- Status messages now use light gray background (#F5F5F5) with no border
+
 **Next Session Priorities:**
 1. Build account page (`/account/[address]`)
 2. Build belief detail page (`/belief/[uid]`)
@@ -445,6 +487,6 @@ believeth/
 
 ---
 
-**Last Updated:** January 20, 2026
-**Current Phase:** Core functionality complete - building account & detail pages
+**Last Updated:** January 21, 2026
+**Current Phase:** Core functionality complete and stable - ready for account & detail pages
 **Next Action:** Build account page (`/account/[address]`) and belief detail page (`/belief/[uid]`)

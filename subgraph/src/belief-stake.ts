@@ -11,9 +11,10 @@ export function handleOwnershipTransferred(
 }
 
 export function handleStaked(event: StakedEvent): void {
-  let belief = Belief.load(event.params.attestationUID)
+  let beliefId = event.params.attestationUID.toHexString()
+  let belief = Belief.load(beliefId)
   if (belief == null) {
-    belief = new Belief(event.params.attestationUID)
+    belief = new Belief(beliefId)
     belief.totalStaked = event.params.amount
     belief.stakerCount = 1
     belief.createdAt = event.params.timestamp
@@ -22,12 +23,9 @@ export function handleStaked(event: StakedEvent): void {
     belief.stakerCount = belief.stakerCount + 1
   }
 
-  let stakeId =
-    event.params.attestationUID.toHexString() +
-    "-" +
-    event.params.staker.toHexString()
+  let stakeId = beliefId + "-" + event.params.staker.toHexString()
   let stake = new Stake(stakeId)
-  stake.belief = belief.id
+  stake.belief = beliefId
   stake.staker = event.params.staker
   stake.amount = event.params.amount
   stake.stakedAt = event.params.timestamp
@@ -40,15 +38,13 @@ export function handleStaked(event: StakedEvent): void {
 }
 
 export function handleUnstaked(event: UnstakedEvent): void {
-  let belief = Belief.load(event.params.attestationUID)
+  let beliefId = event.params.attestationUID.toHexString()
+  let belief = Belief.load(beliefId)
   if (belief == null) {
     return
   }
 
-  let stakeId =
-    event.params.attestationUID.toHexString() +
-    "-" +
-    event.params.staker.toHexString()
+  let stakeId = beliefId + "-" + event.params.staker.toHexString()
   let stake = Stake.load(stakeId)
   if (stake == null) {
     return

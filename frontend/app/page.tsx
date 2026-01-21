@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
@@ -48,6 +48,17 @@ export default function Home() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [userStakes, setUserStakes] = useState<Record<string, boolean>>({});
   const [loadingBeliefId, setLoadingBeliefId] = useState<string | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [textareaFocused, setTextareaFocused] = useState(false);
+
+  // Auto-grow textarea as content changes
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [belief]);
 
   useEffect(() => {
     async function fetchBeliefs() {
@@ -172,7 +183,8 @@ export default function Home() {
           })
         );
 
-        setUserStakes(Object.fromEntries(stakeChecks));
+        // Merge with existing state instead of replacing to preserve optimistic updates
+        setUserStakes((prev) => ({ ...prev, ...Object.fromEntries(stakeChecks) }));
       } catch (error) {
         console.error('Error checking user stakes:', error);
       }
@@ -204,6 +216,12 @@ export default function Home() {
 
   async function handleStake(attestationUID: string) {
     if (!walletClient || !publicClient || !address) return;
+    
+    // Prevent double-staking
+    if (userStakes[attestationUID]) {
+      setStatus('❌ You have already staked on this belief');
+      return;
+    }
 
     setLoadingBeliefId(attestationUID);
     setStatus('');
@@ -256,24 +274,33 @@ export default function Home() {
 
       await publicClient.waitForTransactionReceipt({ hash: stakeTx });
 
-      setProgress(100);
-      setProgressMessage('Staked!');
-
-      // Update user stakes state
+      // Update user stakes state immediately so UI updates
       setUserStakes((prev) => ({ ...prev, [attestationUID]: true }));
 
-      // Refresh beliefs to update totals
+      // Poll subgraph to wait for indexing
+      setProgress(75);
+      setProgressMessage('Processing your stake...');
+
+      const maxAttempts = 10;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const progressIncrement = (100 - 75) / maxAttempts;
+        setProgress(75 + progressIncrement * (attempt + 1));
+      }
+
+      // Refresh beliefs and switch to Recent
       const fetchedBeliefs = await getBeliefs();
       setBeliefs(fetchedBeliefs);
-
-      // Switch to Recent Beliefs to show the updated belief at the top
       setSortOption('recent');
+
+      setProgress(100);
+      setProgressMessage('Staked!');
 
       setTimeout(() => {
         setProgress(0);
         setProgressMessage('');
         setLoadingBeliefId(null);
-      }, 2000);
+      }, 1000);
     } catch (error: unknown) {
       console.error('Stake error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Stake failed';
@@ -286,6 +313,12 @@ export default function Home() {
 
   async function handleUnstake(attestationUID: string) {
     if (!walletClient || !publicClient) return;
+    
+    // Prevent unstaking when no stake exists
+    if (!userStakes[attestationUID]) {
+      setStatus('❌ You do not have an active stake on this belief');
+      return;
+    }
 
     setLoadingBeliefId(attestationUID);
     setStatus('');
@@ -306,24 +339,33 @@ export default function Home() {
 
       await publicClient.waitForTransactionReceipt({ hash: unstakeTx });
 
-      setProgress(100);
-      setProgressMessage('Unstaked!');
-
-      // Update user stakes state
+      // Update user stakes state immediately so UI updates
       setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
 
-      // Refresh beliefs to update totals
+      // Poll subgraph to wait for indexing
+      setProgress(75);
+      setProgressMessage('Processing your unstake...');
+
+      const maxAttempts = 10;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const progressIncrement = (100 - 75) / maxAttempts;
+        setProgress(75 + progressIncrement * (attempt + 1));
+      }
+
+      // Refresh beliefs and switch to Recent
       const fetchedBeliefs = await getBeliefs();
       setBeliefs(fetchedBeliefs);
-
-      // Switch to Recent Beliefs to show the updated belief at the top
       setSortOption('recent');
+
+      setProgress(100);
+      setProgressMessage('Unstaked!');
 
       setTimeout(() => {
         setProgress(0);
         setProgressMessage('');
         setLoadingBeliefId(null);
-      }, 2000);
+      }, 1000);
     } catch (error: unknown) {
       console.error('Unstake error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unstake failed';
@@ -366,7 +408,7 @@ export default function Home() {
 
       // Step 1: Create attestation
       setProgress(10);
-      setProgressMessage('Creating attestation...');
+      setProgressMessage('Creating attestation (TX 1 of 3)...');
       const encodedData = encodeAbiParameters(
         [{ name: 'belief', type: 'string' }],
         [belief]
@@ -414,7 +456,7 @@ export default function Home() {
 
       // Step 2: Approve USDC
       setProgress(40);
-      setProgressMessage('Approving USDC...');
+      setProgressMessage('Approving USDC (TX 2 of 3)...');
 
       const approveTx = await walletClient.writeContract({
         address: CONTRACTS.MOCK_USDC as `0x${string}`,
@@ -433,7 +475,7 @@ export default function Home() {
 
       // Step 3: Stake
       setProgress(60);
-      setProgressMessage('Staking $2...');
+      setProgressMessage('Staking $2 (TX 3 of 3)...');
 
       const stakeTx = await walletClient.writeContract({
         address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
@@ -578,13 +620,27 @@ export default function Home() {
               }}
             >
               <div className="compose-input">
+                {textareaFocused && (
+                  <div className="char-counter-top">{belief.length}/280</div>
+                )}
                 <textarea
+                  ref={textareaRef}
                   className="belief-textarea"
                   value={belief}
                   onChange={(e) => setBelief(e.target.value)}
+                  onFocus={() => setTextareaFocused(true)}
+                  onBlur={() => setTextareaFocused(false)}
+                  onPaste={(e) => {
+                    const paste = e.clipboardData.getData('text');
+                    if (belief.length + paste.length > 280) {
+                      e.preventDefault();
+                      const remaining = 280 - belief.length;
+                      setBelief(belief + paste.slice(0, remaining));
+                    }
+                  }}
                   placeholder="about..."
-                  maxLength={280}
                   disabled={loading}
+                  rows={1}
                 />
               </div>
 
