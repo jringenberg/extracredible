@@ -1,4 +1,44 @@
 /* 
+  Color System
+  ────────────
+  HSL-based for easy brightness manipulation and dark mode support
+  Hue/Saturation stay constant, Lightness varies for hierarchy
+*/
+
+:root {
+  /* Base Colors */
+  --color-black: hsl(0, 0%, 0%);
+  --color-white: hsl(0, 0%, 100%);
+  --color-gray-light: hsl(0, 0%, 95%);
+  --color-gray-disabled: hsl(0, 0%, 79%);
+  
+  /* Accent Blue - RainbowKit default */
+  --accent-hue: 214;
+  --accent-sat: 98%;
+  
+  --color-accent: hsl(var(--accent-hue), var(--accent-sat), 53%);
+  --color-accent-hover: hsl(var(--accent-hue), var(--accent-sat), 43%);
+  --color-accent-light: hsl(var(--accent-hue), var(--accent-sat), 63%);
+  
+  /* UI Colors */
+  --color-bg-primary: var(--color-white);
+  --color-bg-button: hsl(48, 100%, 97%); /* Light yellow #FFFBEA */
+  --color-bg-button-shadow: hsl(48, 100%, 87%); /* Inner shadow #FFF1BA */
+  --color-text-primary: var(--color-black);
+  --color-border: var(--color-black);
+}
+
+/* Dark mode (future) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg-primary: hsl(0, 0%, 10%);
+    --color-text-primary: hsl(0, 0%, 95%);
+    --color-border: hsl(0, 0%, 80%);
+    /* Accent blues stay same hue/sat, just invert lightness if needed */
+  }
+}
+
+/* 
   Typography System
   ─────────────────
   1. 1rem (16px) Times New Roman, all caps, 8% letter spacing
@@ -21,8 +61,8 @@ body {
   font-family: 'Times New Roman', Times, serif;
   font-size: 1rem;
   line-height: 1.5;
-  color: #000;
-  background: #fff;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -31,6 +71,17 @@ button {
   font-family: Helvetica, Arial, sans-serif;
   border: none;
   cursor: pointer;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
 }
 
 button:disabled {
@@ -92,13 +143,12 @@ ul {
   top: 0;
   left: 0;
   right: 0;
-  height: 4rem;
   background: #fff;
   z-index: 1000;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1rem;
+  padding: 1rem;
   border-bottom: 1px solid transparent;
 }
 
@@ -155,6 +205,16 @@ ul {
   margin-bottom: 5rem;
 }
 
+/* Headline */
+.headline {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 3rem;
+  line-height: 1.2;
+  font-weight: normal;
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
 /* Hero / Compose Section */
 .hero,
 .compose {
@@ -188,7 +248,7 @@ ul {
   font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #000;
+  color: var(--color-gray-disabled);
   z-index: 10;
 }
 
@@ -251,8 +311,9 @@ ul {
 }
 
 .btn-disabled-style {
-  background: #E5E5E5 !important;
-  color: #999 !important;
+  background: transparent !important;
+  color: #c9c9c9 !important;
+  border: 1px solid #c9c9c9 !important;
   cursor: pointer;
   box-shadow: none !important;
 }
@@ -450,7 +511,7 @@ ul {
 }
 
 .btn-stake:hover:not(:disabled) {
-  color: #0000ee;
+  color: var(--color-accent-hover);
   text-decoration: underline;
 }
 

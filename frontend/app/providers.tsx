@@ -29,8 +29,8 @@ const appInfo = {
 };
 
 const customTheme = lightTheme({
-  accentColor: '#FFFBEA',
-  accentColorForeground: '#000',
+  accentColor: '#0E76FD', // RainbowKit default blue
+  accentColorForeground: '#FFF',
   borderRadius: 'large',
   overlayBlur: 'small',
   fontStack: 'system',
@@ -50,6 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           initialChain={baseSepolia}
           theme={customTheme}
           avatar={CustomAvatar}
+          showRecentTransactions={true}
         >
           <ErrorSuppressor />
           <ChainGuard />

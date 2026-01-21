@@ -449,6 +449,38 @@ ETH_RPC_URL=https://sepolia.base.org
 - Different progress bar spacing for compose section (1rem) vs belief cards (0rem inside wrapper)
 - Status messages now use light gray background (#F5F5F5) with no border
 
+**Session 7 Continued - Design System & Polish (January 21, 2026):**
+
+**Color System Implementation:**
+- Built HSL-based color system with CSS custom properties for maintainability
+- Used HSL (Hue/Saturation/Lightness) for easy brightness manipulation
+- Set up `--accent-hue` variable (214 = blue) for potential easter egg feature
+- Defined semantic color tokens: accent, accent-hover, accent-light
+- Reset RainbowKit to default blue (#0E76FD) for consistency
+- All accent colors now derive from single hue value, easy to shift entire palette
+- Dark mode ready: can invert lightness values without alpha/transparency
+
+**Button & Input Improvements:**
+- Disabled button style: transparent background, #c9c9c9 text/border
+- Removed disabled state from hero textarea - users can type before connecting
+- Belief text persists when wallet connects (better UX flow)
+- Character counter now uses light gray (#c9c9c9) for subtlety
+- Status messages use light gray background (#F5F5F5) with no border
+
+**RainbowKit Configuration:**
+- Enabled `showRecentTransactions` for transparency
+- Users see pending/confirmed/failed transactions in account modal
+- Changed `chainStatus` from "icon" to "none" (single-chain app)
+- Changed button label from "Connect Wallet" to "Connect" (more minimal)
+- Researched RainbowKit features: coolMode, locale, useConnect vs Custom
+- Decision: stick with ConnectButton.Custom wrapper pattern
+
+**Typography & Layout:**
+- Added 48px headline "Costly Signals / Prove Conviction" at top of main content
+- Headline centered, inside 32rem column, Times New Roman
+- Adjusted header padding to `1rem` all sides (matches top/bottom/left/right)
+- Removed fixed header height, now determined by content + padding
+
 **Next Session Priorities:**
 1. Build account page (`/account/[address]`)
 2. Build belief detail page (`/belief/[uid]`)
@@ -488,5 +520,5 @@ believeth/
 ---
 
 **Last Updated:** January 21, 2026
-**Current Phase:** Core functionality complete and stable - ready for account & detail pages
+**Current Phase:** Core functionality complete, design system established, ready for account & detail pages
 **Next Action:** Build account page (`/account/[address]`) and belief detail page (`/belief/[uid]`)

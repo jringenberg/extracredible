@@ -563,9 +563,9 @@ export default function Home() {
               </button>
               <div className="wallet-button">
                 <ConnectButton 
-                  label="Connect Wallet"
+                  label="Connect"
                   showBalance={false}
-                  chainStatus="icon"
+                  chainStatus="none"
                   accountStatus="address"
                 />
               </div>
@@ -573,6 +573,10 @@ export default function Home() {
 
             <div className="page">
               <main className="main">
+              <h1 className="headline">
+                Costly Signals<br />Prove Conviction
+              </h1>
+
               {!isConnected ? (
                 <section className="hero">
                   <h2 className="hero-title">
@@ -584,9 +588,10 @@ export default function Home() {
                   <div className="hero-input">
                     <textarea
                       className="belief-textarea"
+                      value={belief}
+                      onChange={(e) => setBelief(e.target.value)}
                       placeholder="about..."
                       maxLength={280}
-                      disabled
                     />
                   </div>
 
