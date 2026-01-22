@@ -57,6 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           initialChain={baseSepolia}
           theme={customTheme}
           avatar={CustomAvatar}
+          modalSize="compact"
         >
           <ErrorSuppressor />
           <ChainGuard />
