@@ -51,6 +51,8 @@ export default function Home() {
   const [showFaucetModal, setShowFaucetModal] = useState(false);
   const [faucetLoading, setFaucetLoading] = useState<'eth' | 'usdc' | null>(null);
   const [faucetStatus, setFaucetStatus] = useState('');
+  const [faucetTxHash, setFaucetTxHash] = useState<{ eth?: string; usdc?: string }>({});
+  const [contractAddressCopied, setContractAddressCopied] = useState(false);
 
   // Toggle faucet mode body class
   useEffect(() => {
@@ -206,13 +208,46 @@ export default function Home() {
     checkUserStakes();
   }, [beliefs, address, publicClient]);
 
-  function handleFaucetETH() {
-    // Open Base Sepolia faucet in new tab
-    window.open('https://www.coinbase.com/faucets/base-ethereum-sepolia-faucet', '_blank');
-  }
+  const handleFaucetETH = (openConnectModal?: () => void) => async () => {
+    if (!address) {
+      if (openConnectModal) {
+        openConnectModal();
+      }
+      return;
+    }
+
+    setFaucetLoading('eth');
+    setFaucetStatus('');
+
+    try {
+      const response = await fetch('/api/faucet/eth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setFaucetTxHash((prev) => ({ ...prev, eth: data.txHash }));
+      } else {
+        setFaucetStatus(data.error);
+      }
+    } catch (error: unknown) {
+      console.error('[Faucet ETH] Error:', error);
+      setFaucetStatus('Failed to request ETH. Please try again.');
+    } finally {
+      setFaucetLoading(null);
+    }
+  };
   
-  async function handleFaucetUSDC() {
-    if (!walletClient || !address) return;
+  const handleFaucetUSDC = (openConnectModal?: () => void) => async () => {
+    if (!walletClient || !address) {
+      if (openConnectModal) {
+        openConnectModal();
+      }
+      return;
+    }
     
     setFaucetLoading('usdc');
     setFaucetStatus('');
@@ -239,14 +274,20 @@ export default function Home() {
 
       await publicClient?.waitForTransactionReceipt({ hash: mintTx });
       
-      setFaucetStatus(`✅ Minted 20 MockUSDC! Transaction: ${mintTx}`);
+      setFaucetTxHash((prev) => ({ ...prev, usdc: mintTx }));
     } catch (error: unknown) {
       console.error('Faucet USDC error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to mint USDC';
-      setFaucetStatus(`❌ ${errorMessage}`);
+      setFaucetStatus(errorMessage);
     } finally {
       setFaucetLoading(null);
     }
+  };
+
+  function handleCopyContractAddress() {
+    navigator.clipboard.writeText(CONTRACTS.MOCK_USDC);
+    setContractAddressCopied(true);
+    setTimeout(() => setContractAddressCopied(false), 2000);
   }
 
   async function handleStake(attestationUID: string) {
@@ -619,33 +660,72 @@ export default function Home() {
                   <p className="content">You need two things to test Believeth on Base Sepolia testnet:</p>
                   
                   <div className="faucet-section">
-<p className="content">Base Sepolia ETH - Pays for gas (blockchain transaction fees). You&apos;ll need about 0.0005 ETH per belief creation, which covers the three transactions: approve, attest, and stake.</p>
+                    <p className="content">Base Sepolia ETH pays for gas fees. You need about 0.0005 ETH per belief (three transactions: approve, attest, stake).</p>
                     
                     <button 
                       className="btn btn-outline" 
-                      onClick={handleFaucetETH}
+                      onClick={handleFaucetETH(openConnectModal)}
+                      disabled={faucetLoading === 'eth' || !!faucetTxHash.eth}
                     >
-                      Get ETH from Coinbase Faucet →
+                      {faucetLoading === 'eth' 
+                        ? 'Sending...' 
+                        : faucetTxHash.eth 
+                        ? (
+                          <a 
+                            href={`https://sepolia.basescan.org/tx/${faucetTxHash.eth}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: 'inherit', textDecoration: 'none' }}
+                          >
+                            TX: {faucetTxHash.eth.slice(0, 6)}...
+                          </a>
+                        )
+                        : 'Get 0.005 ETH'
+                      }
                     </button>
                   </div>
                   
                   <div className="faucet-section">
-                    <p className="content">MockUSDC - Fake USDC for staking. Each belief costs $2 (2,000,000 in 6-decimal format). This is testnet money with no real value.</p>
+                    <p className="content">USDC is used for staking. Each belief costs $2. This is testnet money with no real value.</p>
                     
                     <button 
                       className="btn btn-outline" 
-                      onClick={handleFaucetUSDC}
-                      disabled={!isConnected || faucetLoading === 'usdc'}
+                      onClick={handleFaucetUSDC(openConnectModal)}
+                      disabled={faucetLoading === 'usdc' || !!faucetTxHash.usdc}
                     >
-                      {faucetLoading === 'usdc' ? 'Minting...' : 'Get 20 MockUSDC'}
+                      {faucetLoading === 'usdc' 
+                        ? 'Minting...' 
+                        : faucetTxHash.usdc 
+                        ? (
+                          <a 
+                            href={`https://sepolia.basescan.org/tx/${faucetTxHash.usdc}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: 'inherit', textDecoration: 'none' }}
+                          >
+                            TX: {faucetTxHash.usdc.slice(0, 6)}...
+                          </a>
+                        )
+                        : 'Get 20 USDC'
+                      }
                     </button>
                   </div>
                   
                   <div className="faucet-section">
-                    <p className="content">To see MockUSDC in your wallet: Add custom token with address <code className="contract-address" onClick={() => navigator.clipboard.writeText(CONTRACTS.MOCK_USDC)}>{CONTRACTS.MOCK_USDC}</code>, symbol USDC, decimals 6. In MetaMask: Assets → Import tokens → Custom token → paste address.</p>
+                    <p className="content">
+                      To see (fake) USDC in your wallet on the Base Sepolia network, add this custom token:{' '}
+                      <span className="contract-address" onClick={handleCopyContractAddress}>
+                        {CONTRACTS.MOCK_USDC}
+                      </span>
+                      {' '}
+                      {contractAddressCopied ? 'Copied!' : '(click to copy)'}
+                    </p>
+                    <p className="content">In MetaMask: Assets → Import Tokens → Custom Token. Symbol: USDC, Decimals: 6</p>
                   </div>
                   
-                  {faucetStatus && <p className="status">{faucetStatus}</p>}
+                                {faucetStatus && (
+                                  <p className="status">{faucetStatus}</p>
+                                )}
                 </section>
               ) : (
                 <>

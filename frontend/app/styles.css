@@ -609,9 +609,22 @@ body.faucet-active .btn-outline {
 }
 
 body.faucet-active .status {
-  background: var(--color-white);
-  color: var(--color-black);
+  background: #333;
+  color: #fff;
   border: none;
+}
+
+.contract-address {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: inherit;
+  color: var(--color-accent-light);
+  cursor: pointer;
+  background: none;
+  text-decoration: none;
+}
+
+.contract-address:hover {
+  opacity: 0.7;
 }
 
 /* Responsive */
