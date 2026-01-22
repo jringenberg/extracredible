@@ -535,6 +535,108 @@ ul {
   line-height: 1.875rem;
 }
 
+.belief-details {
+  background: var(--color-bg-primary);
+  border-left: 1px solid #000;
+  border-right: 1px solid #000;
+  border-bottom: 1px solid #000;
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.belief-details.open {
+  grid-template-rows: 1fr;
+}
+
+.belief-details > div {
+  min-height: 0;
+  opacity: 0;
+  transition: opacity 250ms ease 100ms;
+}
+
+.belief-details.open > div {
+  opacity: 1;
+  transition: opacity 250ms ease 100ms;
+}
+
+.stakes-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+}
+
+.stakes-table tbody tr {
+  border-bottom: 1px solid #000;
+  height: 2.5rem;
+}
+
+.stakes-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.stakes-table td {
+  padding: 0.25rem 0.5rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  line-height: 1rem;
+  text-align: left;
+  vertical-align: middle;
+  border-right: 1px solid #000;
+  text-transform: uppercase;
+}
+
+.stakes-table td:last-child {
+  border-right: none;
+}
+
+.stakes-table .stake-amount {
+  white-space: nowrap;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  max-width: 2.5rem;
+  text-align: center;
+  font-weight: normal;
+}
+
+.stake-time {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.stake-address {
+  width: auto;
+}
+
+.stake-tx {
+  white-space: nowrap;
+  width: 1%;
+  text-align: right;
+}
+
+.created-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.created-link:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.stake-tx a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.stake-tx a:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
 .belief-footer {
   display: flex;
   justify-content: space-between;
@@ -644,7 +746,7 @@ body.faucet-active .status {
 
 .contract-address {
   font-family: 'Times New Roman', Times, serif;
-  font-size: inherit;
+  font-size: calc(1.5rem - 1px);
   color: var(--color-accent-light);
   cursor: pointer;
   background: none;
@@ -697,5 +799,22 @@ body.faucet-active .disconnect-link {
 
   .btn-stake {
     width: 100%;
+  }
+
+  .stakes-table td {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .stakes-table .stake-amount {
+    width: 2rem;
+    min-width: 2rem;
+    max-width: 2rem;
+    font-size: 0.75rem;
+    font-weight: normal;
+  }
+
+  .stakes-table tbody tr {
+    height: 2rem;
   }
 }

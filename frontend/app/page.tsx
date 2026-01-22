@@ -6,7 +6,7 @@ import { Header } from './Header';
 import { useAccount, useWalletClient, usePublicClient, useDisconnect } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
-import { getBeliefs } from '@/lib/subgraph';
+import { getBeliefs, getBeliefStakes } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
 import {
   CONTRACTS,
@@ -21,6 +21,35 @@ import {
 function truncateAddress(addr: string): string {
   if (!addr) return '';
   return `${addr.slice(0, 6)}...`;
+}
+
+function formatTimeAgo(timestamp: string): string {
+  const now = Date.now();
+  const then = parseInt(timestamp) * 1000; // Convert to milliseconds
+  const diff = now - then;
+  
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  
+  if (minutes < 5) return 'JUST NOW';
+  if (minutes < 60) return `${minutes} MIN AGO`;
+  if (hours < 24) return `${hours} HR AGO`;
+  if (days < 7) return `${days} DAY AGO`;
+  
+  // Format as date
+  const date = new Date(then);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatAddress(addr: string): string {
+  if (!addr) return '';
+  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+}
+
+function formatTxHash(hash: string): string {
+  if (!hash) return '';
+  return `${hash.slice(0, 6)}...`;
 }
 
 export default function Home() {
@@ -61,6 +90,13 @@ export default function Home() {
   const [faucetTxHash, setFaucetTxHash] = useState<{ eth?: string; usdc?: string }>({});
   const [contractAddressCopied, setContractAddressCopied] = useState(false);
   const [walletStuck, setWalletStuck] = useState(false);
+  const [openBeliefDetails, setOpenBeliefDetails] = useState<Record<string, boolean>>({});
+  const [beliefStakes, setBeliefStakes] = useState<Record<string, Array<{
+    staker: string;
+    amount: string;
+    timestamp: string;
+    transactionHash: string;
+  }>>>({});
 
   // Toggle faucet mode body class
   useEffect(() => {
@@ -381,6 +417,34 @@ export default function Home() {
     setTimeout(() => {
       window.location.reload();
     }, 100);
+  }
+
+  async function toggleBeliefDetails(beliefId: string) {
+    const isCurrentlyOpen = openBeliefDetails[beliefId];
+    
+    // Toggle open state
+    setOpenBeliefDetails(prev => ({
+      ...prev,
+      [beliefId]: !isCurrentlyOpen
+    }));
+    
+    // If opening and we don't have stakes data yet, fetch it
+    if (!isCurrentlyOpen && !beliefStakes[beliefId]) {
+      try {
+        const stakes = await getBeliefStakes(beliefId);
+        setBeliefStakes(prev => ({
+          ...prev,
+          [beliefId]: stakes.map(stake => ({
+            staker: stake.staker,
+            amount: stake.amount,
+            timestamp: stake.stakedAt,
+            transactionHash: stake.transactionHash
+          }))
+        }));
+      } catch (error) {
+        console.error('Error fetching belief stakes:', error);
+      }
+    }
   }
 
   async function handleStake(attestationUID: string) {
@@ -830,12 +894,12 @@ export default function Home() {
               <main className="main">
               {showFaucetModal ? (
                 <section className="faucet-modal">
-                  <h1 className="headline">Free Fake Money<br />For Testing</h1>
+                  <h1 className="headline">Free Fake<br />Money</h1>
                   
-                  <p className="content">You need two things to test Believeth on Base Sepolia testnet:</p>
+                  <p className="content">You need two things to test Believeth on Base Sepolia testnet: fake ETH and fake USDC.</p>
                   
                   <div className="faucet-section">
-                    <p className="content">Base Sepolia ETH pays for gas fees. You need about 0.0005 ETH per belief (three transactions: approve, attest, stake).</p>
+                    <p className="content">Base Sepolia ETH pays for gas fees. You need about 0.0005 ETH per belief (three transactions: approve, attest, stake). This should be enough for about 10.</p>
                     
                     <button 
                       className="btn btn-outline" 
@@ -855,7 +919,7 @@ export default function Home() {
                             TX: {faucetTxHash.eth.slice(0, 6)}...
                           </a>
                         )
-                        : 'Get 0.005 ETH'
+                        : 'GET 0.005 TESTNET ETH'
                       }
                     </button>
                   </div>
@@ -881,19 +945,18 @@ export default function Home() {
                             TX: {faucetTxHash.usdc.slice(0, 6)}...
                           </a>
                         )
-                        : 'Get 20 USDC'
+                        : 'GET 20 (FAKE) USDC'
                       }
                     </button>
                   </div>
                   
                   <div className="faucet-section">
                     <p className="content">
-                      To see (fake) USDC in your wallet on the Base Sepolia network, add this custom token:{' '}
+                      To see this fake USDC in your wallet, add this custom token {contractAddressCopied ? '(Copied!)' : '(click to copy)'}:
+                      <br />
                       <span className="contract-address" onClick={handleCopyContractAddress}>
                         {CONTRACTS.MOCK_USDC}
                       </span>
-                      {' '}
-                      {contractAddressCopied ? 'Copied!' : '(click to copy)'}
                     </p>
                     <p className="content">In MetaMask: Assets → Import Tokens → Custom Token. Symbol: USDC, Decimals: 6</p>
                   </div>
@@ -1072,9 +1135,69 @@ export default function Home() {
 
               const isLoading = loadingBeliefId === beliefItem.id;
 
+              const isDetailsOpen = openBeliefDetails[beliefItem.id] || false;
+              const stakes = beliefStakes[beliefItem.id] || [];
+
               return (
                 <li key={beliefItem.id} className="belief-card">
-                  <div className="belief-text">{text}</div>
+                  <div 
+                    className="belief-text"
+                    onClick={() => toggleBeliefDetails(beliefItem.id)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {text}
+                  </div>
+                  
+                  <div className={`belief-details ${isDetailsOpen ? 'open' : ''}`}>
+                    <div>
+                      {stakes.length > 0 && (
+                        <table className="stakes-table">
+                          <tbody>
+                            {stakes.map((stake, index) => {
+                              const formattedAddr = formatAddress(stake.staker);
+                              const addrParts = formattedAddr.split('x');
+                              const isCreator = index === stakes.length - 1; // Last stake (oldest) is creator
+                              const dollars = Number(stake.amount) / 1_000_000;
+                              
+                              return (
+                                <tr key={index}>
+                                  <td className="stake-amount">${Math.floor(dollars)}</td>
+                                  <td className="stake-time">{formatTimeAgo(stake.timestamp)}</td>
+                                  <td className="stake-address">
+                                    0<span style={{ textTransform: 'none' }}>x</span>{addrParts[1]}
+                                    {isCreator && (
+                                      <>
+                                        {' '}
+                                        <a 
+                                          href={`https://base-sepolia.easscan.org/attestation/view/${beliefItem.id}`}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="created-link"
+                                        >
+                                          CREATED
+                                        </a>
+                                      </>
+                                    )}
+                                  </td>
+                                  <td className="stake-tx">
+                                    TX{' '}
+                                    <a 
+                                      href={`https://sepolia.basescan.org/tx/${stake.transactionHash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      {formatTxHash(stake.transactionHash)}
+                                    </a>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="belief-footer">
                     <div className="belief-amount">${Math.floor(dollars)}</div>
                     {hasStaked ? (

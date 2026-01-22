@@ -27,6 +27,22 @@ const beliefsQuery = gql`
   }
 `;
 
+const beliefStakesQuery = gql`
+  query GetBeliefStakes($beliefId: ID!) {
+    belief(id: $beliefId) {
+      id
+      stakes(where: { active: true }, orderBy: stakedAt, orderDirection: desc) {
+        id
+        staker
+        amount
+        stakedAt
+        transactionHash
+        active
+      }
+    }
+  }
+`;
+
 export async function getBeliefs(): Promise<Belief[]> {
   const endpoint = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
   if (!endpoint) {
@@ -41,4 +57,28 @@ export async function getBeliefs(): Promise<Belief[]> {
     ...belief,
     lastStakedAt: belief.stakes[0]?.stakedAt || belief.createdAt,
   }));
+}
+
+export type BeliefStake = {
+  id: string;
+  staker: string;
+  amount: string;
+  stakedAt: string;
+  transactionHash: string;
+  active: boolean;
+};
+
+export async function getBeliefStakes(beliefId: string): Promise<BeliefStake[]> {
+  const endpoint = process.env.NEXT_PUBLIC_SUBGRAPH_URL;
+  if (!endpoint) {
+    throw new Error('NEXT_PUBLIC_SUBGRAPH_URL is not set');
+  }
+
+  const client = new GraphQLClient(endpoint);
+  const data = await client.request<{ belief: { stakes: BeliefStake[] } }>(
+    beliefStakesQuery,
+    { beliefId }
+  );
+
+  return data.belief?.stakes || [];
 }
