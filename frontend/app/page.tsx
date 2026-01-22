@@ -122,6 +122,7 @@ export default function Home() {
     async function fetchBeliefTexts() {
       if (!publicClient || beliefs.length === 0) return;
 
+      // Use a ref check inside the effect instead of dependency array
       const missingIds = beliefs
         .map((belief) => belief.id)
         .filter((id) => !beliefTexts[id]);
@@ -171,7 +172,8 @@ export default function Home() {
     }
 
     fetchBeliefTexts();
-  }, [beliefs, beliefTexts, publicClient]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [beliefs, publicClient]);
 
   // Check which beliefs the user has staked on
   useEffect(() => {
