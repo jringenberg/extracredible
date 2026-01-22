@@ -39,7 +39,14 @@ const customTheme = lightTheme({
 // Custom avatar that returns null (no avatar)
 const CustomAvatar: AvatarComponent = () => null;
 
-const queryClient = new QueryClient();
+// Create QueryClient outside component to prevent reinitialization on re-renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

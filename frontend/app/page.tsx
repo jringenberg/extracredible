@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Header } from './Header';
 import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import { baseSepolia } from 'wagmi/chains';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
@@ -49,6 +50,11 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [textareaFocused, setTextareaFocused] = useState(false);
   const [showFaucetModal, setShowFaucetModal] = useState(false);
+  
+  // Memoize the modal toggle to prevent unnecessary re-renders
+  const toggleFaucetModal = useCallback(() => {
+    setShowFaucetModal(prev => !prev);
+  }, []);
   const [faucetLoading, setFaucetLoading] = useState<'eth' | 'usdc' | null>(null);
   const [faucetStatus, setFaucetStatus] = useState('');
   const [faucetTxHash, setFaucetTxHash] = useState<{ eth?: string; usdc?: string }>({});
@@ -635,23 +641,7 @@ export default function Home() {
       <ConnectButton.Custom>
         {({ openConnectModal }) => (
           <>
-            <header className="sticky-header">
-              <button 
-                className={`dollar-button ${showFaucetModal ? 'inverted' : ''}`}
-                onClick={() => setShowFaucetModal(!showFaucetModal)}
-                title="Get test funds"
-              >
-                $
-              </button>
-              <div className="wallet-button">
-                <ConnectButton 
-                  label="Connect"
-                  showBalance={false}
-                  chainStatus="none"
-                  accountStatus="address"
-                />
-              </div>
-            </header>
+            <Header onDollarClick={toggleFaucetModal} isInverted={showFaucetModal} />
 
             <div className="page">
               <main className="main">
