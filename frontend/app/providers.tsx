@@ -36,7 +36,7 @@ const appInfo = {
 };
 
 const customTheme = lightTheme({
-  accentColor: '#0E76FD', // RainbowKit default blue
+  accentColor: '#002FA7', // Klein Blue (International Klein Blue)
   accentColorForeground: '#FFF',
   borderRadius: 'large',
   overlayBlur: 'small',

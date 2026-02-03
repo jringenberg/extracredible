@@ -206,6 +206,21 @@ export default function Home() {
     }
   }, [isConnected, sortOption]);
 
+  // Close sort menu when clicking outside
+  useEffect(() => {
+    if (!showSortMenu) return;
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.sort-dropdown')) {
+        setShowSortMenu(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showSortMenu]);
+
   // Filter and sort beliefs based on selected option
   const displayedBeliefs = beliefs.filter((belief) => {
     if (sortOption === 'popular' || sortOption === 'recent') {
@@ -534,7 +549,7 @@ export default function Home() {
 
       // Poll subgraph to wait for indexing
       setProgress(75);
-      setProgressMessage('Reading from onchain data...');
+      setProgressMessage('Refreshing to latest block...');
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Let animation play
 
       const maxAttempts = 10;
@@ -636,7 +651,7 @@ export default function Home() {
 
       // Poll subgraph to wait for indexing
       setProgress(75);
-      setProgressMessage('Reading from onchain data...');
+      setProgressMessage('Refreshing to latest block...');
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Let animation play
 
       const maxAttempts = 10;
@@ -829,7 +844,7 @@ export default function Home() {
 
       // Poll subgraph for new belief
       setProgress(90);
-      setProgressMessage('Reading from onchain data...');
+      setProgressMessage('Refreshing to latest block...');
       setBelief('');
 
       // Poll for the new attestation in subgraph
@@ -1003,11 +1018,9 @@ export default function Home() {
                 <>
                 {!isConnected ? (
                 <section className="hero">
-                  <h1>Cost Proves<br />Conviction</h1>
+                  <h1 className="allcaps">Cost adds credibility</h1>
                   <p className="content">
-                    $2 says you mean it. The fact that it costs money to stake and record your belief
-                    shows that it is valuable and not just hot air. You have
-                    conviction.
+                    Staking $2 on a statement says you mean it. Locking up even a little money over time is a costly signal, which adds credibility to what you say. Holding positions over time is proof of conviction.
                   </p>
 
                   <div className="hero-input">
@@ -1015,7 +1028,7 @@ export default function Home() {
                       className="belief-textarea"
                       value={belief}
                       onChange={(e) => setBelief(e.target.value)}
-                      placeholder="Make a claim..."
+                      placeholder="Claim, predict, declare..."
                       maxLength={280}
                     />
                   </div>
@@ -1029,17 +1042,15 @@ export default function Home() {
 
                   <div className="hero-info">
                     <p className="content">
-                      Unstake anytime. No resolution, no reward. Just your word, onchain, timestamped, forever.
+                      Unstake anytime and get your $2 back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
                     </p>
                   </div>
                 </section>
               ) : (
           <section className="compose">
-            <h1>Cost Proves<br />Conviction</h1>
+            <h1 className="allcaps">Cost adds credibility</h1>
             <p className="content">
-              $2 says you mean it. The fact that it costs money to stake and record your belief
-              shows that it is valuable and not just hot air. You have
-              conviction.
+              Staking $2 on a statement says you mean it. Locking up even a little money over time is a costly signal, which adds credibility to what you say. Holding positions over time is proof of conviction.
             </p>
 
             <form
@@ -1067,7 +1078,7 @@ export default function Home() {
                       setBelief(belief + paste.slice(0, remaining));
                     }
                   }}
-                  placeholder="Make a claim..."
+                  placeholder="Claim, predict, declare..."
                   disabled={loading}
                   rows={1}
                 />
@@ -1089,7 +1100,7 @@ export default function Home() {
 
             <div className="compose-info">
               <p className="content">
-                Unstake anytime. No resolution, no reward. Just your word, onchain, timestamped, forever.
+                Unstake anytime and get your $2 back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
               </p>
             </div>
           </section>
@@ -1101,46 +1112,32 @@ export default function Home() {
               className="sort-button"
               onClick={() => setShowSortMenu(!showSortMenu)}
             >
+              Show
+              <span className="dropdown-arrow">{showSortMenu ? '▲' : '▼'}</span>
+            </button>
+            <div className="sort-selection allcaps">
               {sortOption === 'popular' && 'Popular Beliefs'}
               {sortOption === 'recent' && 'Recent Beliefs'}
               {sortOption === 'wallet' && address && `Connected Wallet ${truncateAddress(address)}`}
-              <span className="dropdown-arrow">{showSortMenu ? '▲' : '▼'}</span>
-            </button>
+            </div>
             {showSortMenu && (
-              <ul className="sort-menu">
-                <li>
-                  <button
-                    onClick={() => {
-                      setSortOption('popular');
-                      setShowSortMenu(false);
-                    }}
-                  >
-                    Popular Beliefs
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => {
-                      setSortOption('recent');
-                      setShowSortMenu(false);
-                    }}
-                  >
-                    Recent Beliefs
-                  </button>
-                </li>
+              <select
+                className="sort-select-native"
+                value={sortOption}
+                onChange={(e) => {
+                  setSortOption(e.target.value as 'popular' | 'recent' | 'wallet');
+                  setShowSortMenu(false);
+                }}
+                onBlur={() => setShowSortMenu(false)}
+                size={isConnected && address ? 3 : 2}
+                autoFocus
+              >
+                <option value="popular">Popular Beliefs</option>
+                <option value="recent">Recent Beliefs</option>
                 {isConnected && address && (
-                  <li>
-                    <button
-                      onClick={() => {
-                        setSortOption('wallet');
-                        setShowSortMenu(false);
-                      }}
-                    >
-                      Connected Wallet {truncateAddress(address)}
-                    </button>
-                  </li>
+                  <option value="wallet">Connected Wallet {truncateAddress(address)}</option>
                 )}
-              </ul>
+              </select>
             )}
           </div>
 
@@ -1176,11 +1173,11 @@ export default function Home() {
                               const formattedAddr = formatAddress(stake.staker);
                               const addrParts = formattedAddr.split('x');
                               const isCreator = index === stakes.length - 1; // Last stake (oldest) is creator
-                              const dollars = Number(stake.amount) / 1_000_000;
+                              const stakeDollars = Number(stake.amount) / 1_000_000;
                               
                               return (
                                 <tr key={index}>
-                                  <td className="stake-amount">${Math.floor(dollars)}</td>
+                                  <td className="stake-amount">${Math.floor(stakeDollars)}</td>
                                   <td className="stake-time">{formatTimeAgo(stake.timestamp)}</td>
                                   <td className="stake-address">
                                     0<span style={{ textTransform: 'none' }}>x</span>{addrParts[1]}

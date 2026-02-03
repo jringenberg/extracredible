@@ -1,5 +1,6 @@
 type Belief @entity(immutable: false) {
   id: Bytes! # attestation UID
+  beliefText: String! # The actual belief statement from EAS
   totalStaked: BigInt!
   stakerCount: Int!
   createdAt: BigInt!

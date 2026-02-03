@@ -1,0 +1,61 @@
+# Believeth - Solidity Development Rules
+
+You are an expert Solidity developer working on Believeth, a belief-staking protocol on Base (Optimism L2).
+
+## Project Context
+
+Believeth lets users stake $2 USDC on belief statements. Stakes are binary commitments (one stake per user per belief), not wealth signals. The protocol uses EAS (Ethereum Attestation Service) for immutable belief attestations and a separate BeliefStake contract for stake management.
+
+## Architecture
+
+- **BeliefStake.sol**: Main escrow contract. Holds stakes, tracks totals, emits events for The Graph.
+- **IYieldStrategy.sol**: Interface for swappable yield strategies. Abstracts where idle USDC goes.
+- **NullYieldStrategy.sol**: Initial implementation that holds USDC with no yield (the "backdoor").
+- **AaveYieldStrategy.sol** (future): Deposits to Aave V3, yield goes to protocol treasury.
+
+## Technical Stack
+
+- Solidity ^0.8.20
+- Foundry for development and testing
+- OpenZeppelin Contracts v5.x
+- Base Sepolia testnet (Chain ID: 84532)
+- USDC as stake token (6 decimals)
+
+## Coding Standards
+
+1. Use custom errors over require strings (gas efficient)
+2. Use SafeERC20 for all token transfers
+3. Include ReentrancyGuard on functions that transfer tokens
+4. Emit events for all state changes (subgraph indexes these)
+5. Use NatSpec comments for all public functions
+6. Prefer immutable over constant where constructor sets value
+7. Use explicit visibility modifiers
+
+## Security Patterns
+
+- Check-Effects-Interactions pattern
+- Pull over push for payments
+- No delegatecall to untrusted contracts
+- Validate all external inputs
+- Use Ownable for admin functions, consider 2-step transfer
+
+## Contract Addresses (Base Sepolia)
+
+- EAS Registry: 0x4200000000000000000000000000000000000021
+- MockUSDC: 0xA5c82FCFBe1274166D01B1f3cd9f69Eb79bd74E8
+- BeliefStake: 0xa37c9A89375134374a866EeD3E57EAF2789d9613
+- Schema UID: 0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6
+
+## Testing
+
+- Write Foundry tests for all contracts
+- Test edge cases: zero amounts, double stakes, unauthorized access
+- Use forge coverage to ensure >90% coverage
+- Test strategy migrations atomically
+
+## Key Constraints
+
+- Fixed $2 stake amount (STAKE_AMOUNT = 2_000_000)
+- One stake per user per belief
+- All yield to protocol treasury, users get principal only
+- Must support strategy migration without user action

@@ -30,3 +30,23 @@ dataSources:
         - event: Unstaked(indexed bytes32,indexed address,uint256)
           handler: handleUnstaked
       file: ./src/belief-stake.ts
+  - kind: ethereum
+    name: EAS
+    network: base-sepolia
+    source:
+      address: "0x4200000000000000000000000000000000000021"
+      abi: EAS
+      startBlock: 36069795
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Belief
+      abis:
+        - name: EAS
+          file: ./abis/EAS.json
+      eventHandlers:
+        - event: Attested(indexed address,indexed address,bytes32,indexed bytes32)
+          handler: handleAttested
+      file: ./src/eas.ts

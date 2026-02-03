@@ -9,29 +9,33 @@
   /* Base Colors */
   --color-black: hsl(0, 0%, 0%);
   --color-white: hsl(0, 0%, 100%);
-  --color-gray-light: hsl(0, 0%, 95%);
+  --color-gray-1: hsl(0, 0%, 96%); /* #F5F5F5 */
+  --color-gray-2: hsl(0, 0%, 95%); /* #F2F2F2 */
   --color-gray-disabled: hsl(0, 0%, 79%);
   
-  /* Accent Blue - RainbowKit default */
-  --accent-hue: 214;
-  --accent-sat: 98%;
+  /* Accent Blue - Klein Blue (International Klein Blue) */
+  --accent-hue: 223;
+  --accent-sat: 100%;
   
-  --color-accent: hsl(var(--accent-hue), var(--accent-sat), 53%);
-  --color-accent-hover: hsl(var(--accent-hue), var(--accent-sat), 43%);
-  --color-accent-light: hsl(var(--accent-hue), var(--accent-sat), 63%);
+  --color-accent: hsl(var(--accent-hue), var(--accent-sat), 33%);
+  --color-accent-hover: hsl(var(--accent-hue), var(--accent-sat), 28%);
+  --color-accent-light: hsl(var(--accent-hue), var(--accent-sat), 45%);
+  --color-accent-dark: hsl(var(--accent-hue), var(--accent-sat), 15%);
+  --color-accent-lightest: #d5d3ee; /* Lavender - textarea background */
+  --color-accent-bg: hsl(var(--accent-hue), 15%, 96%); /* Page background */
   
   /* UI Colors */
-  --color-bg-primary: var(--color-white);
   --color-bg-button: hsl(48, 100%, 97%); /* Light yellow #FFFBEA */
   --color-bg-button-shadow: hsl(48, 100%, 87%); /* Inner shadow #FFF1BA */
   --color-text-primary: var(--color-black);
   --color-border: var(--color-black);
+  --color-emergency: #ff4444; /* Red - emergency disconnect */
 }
 
 /* Dark mode (future) */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-bg-primary: hsl(0, 0%, 10%);
+    --color-accent-bg: hsl(0, 0%, 10%);
     --color-text-primary: hsl(0, 0%, 95%);
     --color-border: hsl(0, 0%, 80%);
     /* Accent blues stay same hue/sat, just invert lightness if needed */
@@ -62,7 +66,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text-primary);
-  background: var(--color-bg-primary);
+  background: var(--color-accent-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -94,19 +98,27 @@ h1 {
   text-align: center;
   text-transform: uppercase;
   letter-spacing: 5px;
-  margin-bottom: 2rem;
+  margin-top: 2rem;
+  margin-bottom: 3rem;
   font-family: Times New Roman, Times, serif;
   font-size: 1.7rem;
   font-weight: normal;
   line-height: 1.5;
+  color: var(--color-accent);
 }
 
 /* Content text */
 .content {
   margin-top: 1.5rem;
+  margin-bottom: 0;
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   line-height: 2.25rem;
+  color: var(--color-accent);
+}
+
+.content + .content {
+  margin-top: 0;
 }
 
 button:disabled {
@@ -168,7 +180,7 @@ ul {
   top: 0;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--color-accent-bg);
   z-index: 1000;
   display: flex;
   justify-content: space-between;
@@ -180,8 +192,8 @@ ul {
 .dollar-button {
   width: 2.625rem;
   height: 2.625rem;
-  background: #000;
-  color: #fff;
+  background: var(--color-black);
+  color: var(--color-white);
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   display: flex;
@@ -194,7 +206,7 @@ ul {
 
 /* Layout */
 .page {
-  max-width: 32rem;
+  max-width: 34rem;
   margin: 0 auto;
   padding: 0;
   position: relative;
@@ -222,14 +234,14 @@ ul {
 
 .wallet-button [data-testid="rk-account-button"] {
   font-weight: 400 !important;
-  border: 1px solid #000 !important;
+  border: 1px solid var(--color-black) !important;
 }
 
 .emergency-disconnect {
   width: 2.625rem;
   height: 2.625rem;
-  background: #ff4444;
-  color: #fff;
+  background: var(--color-emergency);
+  color: var(--color-white);
   font-size: 1.2rem;
   display: flex;
   justify-content: center;
@@ -246,25 +258,31 @@ ul {
 }
 
 .main {
-  margin-top: 5rem;
+  margin-top: 6rem;
   margin-bottom: 5rem;
 }
 
 /* Headline */
 /* Hero / Compose Section */
-.all-caps {
+.allcaps {
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.camelcase {
+  text-transform: none;
+  font-size: 3.1rem;
+  font-weight: normal;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  line-height: 1.2;
+  text-align: left;
+  color: var(--color-accent);
 }
 
 .hero,
 .compose {
   width: 100%;
-}
-
-.hero p,
-.compose p {
-  margin-bottom: 0.5rem;
 }
 
 .hero-input,
@@ -293,8 +311,8 @@ ul {
   width: 100%;
   min-height: 5.875rem;
   padding: 1rem 1rem 1.2rem 1rem;
-  background: #000;
-  color: #fff;
+  background: var(--color-accent-lightest);
+  color: var(--color-black);
   border: none;
   resize: none;
   font-family: 'Times New Roman', Times, serif;
@@ -307,11 +325,12 @@ ul {
 
 .belief-textarea:focus {
   outline: none;
-  background: #000;
+  background: var(--color-accent-lightest);
 }
 
 .belief-textarea::placeholder {
-  color: #666;
+  color: var(--color-accent);
+  opacity: 0.5;
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   line-height: 1.875rem;
@@ -326,7 +345,7 @@ ul {
 .btn {
   display: block;
   width: 100%;
-  height: 2.625rem;
+  padding: 0.7rem 1rem;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
@@ -335,7 +354,7 @@ ul {
   border: none;
   border-radius: 1.125rem;
   transition: opacity 0.2s;
-  box-shadow: inset 0 0 24px 0 #FFF1BA;
+  box-shadow: inset 0 0 24px 0 var(--color-bg-button-shadow);
 }
 
 .btn:not(:disabled):hover {
@@ -343,14 +362,15 @@ ul {
 }
 
 .btn-primary {
-  background: #FFFBEA;
-  color: #000;
+  background: var(--color-bg-button);
+  color: var(--color-black);
 }
 
 .btn-disabled-style {
   background: transparent !important;
-  color: #c9c9c9 !important;
-  border: 1px solid #c9c9c9 !important;
+  color: var(--color-accent) !important;
+  border: 1px solid var(--color-accent) !important;
+  opacity: 0.3;
   cursor: pointer;
   box-shadow: none !important;
 }
@@ -382,16 +402,6 @@ ul {
   line-height: 2.25rem;
 }
 
-.hero-info p,
-.compose-info p {
-  margin-bottom: 1rem;
-}
-
-.hero-info p:last-child,
-.compose-info p:last-child {
-  margin-bottom: 0;
-}
-
 /* Wallet Button - Using RainbowKit's theme system */
 /* Theme is configured in providers.tsx with custom colors */
 
@@ -403,7 +413,7 @@ ul {
   text-align: center;
   padding: 0.75rem;
   border-radius: 0.5rem;
-  background: #F5F5F5;
+  background: var(--color-gray-1);
   border: none;
 }
 
@@ -418,14 +428,14 @@ ul {
 .progress-bar-bg {
   width: 100%;
   height: 0.5rem;
-  background: #F2F2F2;
+  background: var(--color-gray-2);
   border-radius: 0.25rem;
   overflow: hidden;
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: #000;
+  background: var(--color-black);
   transition: width 2s ease;
 }
 
@@ -438,7 +448,7 @@ ul {
   letter-spacing: 0.05em;
   line-height: 1.2;
   text-align: left;
-  color: #000;
+  color: var(--color-black);
 }
 
 /* Beliefs Section */
@@ -449,15 +459,20 @@ ul {
 
 .sort-dropdown {
   position: relative;
+  margin-top: 3rem;
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
 }
 
 .sort-button {
-  width: 100%;
-  height: 2.625rem;
+  padding: 0.7rem 1rem;
   background: transparent;
-  border: 1px solid #000;
-  color: #000;
+  border: 1px solid var(--color-black);
+  color: var(--color-black);
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
@@ -465,7 +480,7 @@ ul {
   letter-spacing: 0.05em;
   border-radius: 1.125rem;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
@@ -473,44 +488,29 @@ ul {
 }
 
 .sort-button:hover {
-  background: #f5f5f5;
+  background: var(--color-gray-1);
 }
 
 .dropdown-arrow {
   font-size: 0.625rem;
 }
 
-.sort-menu {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  right: 0;
-  background: #fff;
-  border: 1px solid #000;
-  border-radius: 0.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem 0;
-  z-index: 10;
+.sort-select-native {
+  /* Reset to browser defaults */
+  all: revert;
+  
+  /* Only override positioning */
+  position: absolute !important;
+  top: calc(2.625rem + 0.5rem) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 10 !important;
 }
 
-.sort-menu li button {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background: none;
-  border: none;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.sort-menu li button:hover {
-  background: #f5f5f5;
+.sort-selection {
+  white-space: nowrap;
+  font-size: 1.7rem;
+  line-height: 1.5;
 }
 
 .beliefs-list {
@@ -527,19 +527,19 @@ ul {
 }
 
 .belief-text {
-  padding: 1rem 1rem 1.2rem 1rem;
-  background: #000;
-  color: #fff;
+  padding: 1.5rem 1.5rem 1.8rem 1.5rem;
+  background: var(--color-black);
+  color: var(--color-white);
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   line-height: 1.875rem;
 }
 
 .belief-details {
-  background: var(--color-bg-primary);
-  border-left: 1px solid #000;
-  border-right: 1px solid #000;
-  border-bottom: 1px solid #000;
+  background: var(--color-accent-bg);
+  border-left: 1px solid var(--color-black);
+  border-right: 1px solid var(--color-black);
+  border-bottom: 1px solid var(--color-black);
   display: grid;
   grid-template-rows: 0fr;
   overflow: hidden;
@@ -568,7 +568,7 @@ ul {
 }
 
 .stakes-table tbody tr {
-  border-bottom: 1px solid #000;
+  border-bottom: 1px solid var(--color-black);
   height: 2.5rem;
 }
 
@@ -583,7 +583,7 @@ ul {
   line-height: 1rem;
   text-align: left;
   vertical-align: middle;
-  border-right: 1px solid #000;
+  border-right: 1px solid var(--color-black);
   text-transform: uppercase;
 }
 
@@ -648,12 +648,12 @@ ul {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
-  color: #000;
+  color: var(--color-black);
 }
 
 .btn-stake {
   background: none;
-  color: #000;
+  color: var(--color-black);
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
@@ -739,8 +739,8 @@ body.faucet-active .btn-outline {
 }
 
 body.faucet-active .status {
-  background: #333;
-  color: #fff;
+  background: hsl(0, 0%, 20%);
+  color: var(--color-white);
   border: none;
 }
 
