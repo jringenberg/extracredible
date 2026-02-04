@@ -8,6 +8,7 @@ import { baseSepolia } from 'wagmi/chains';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { getBeliefs, getBeliefStakes } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
+import { AddressDisplay } from '@/components/AddressDisplay';
 import {
   CONTRACTS,
   EAS_ABI,
@@ -1068,8 +1069,6 @@ export default function Home() {
                         <table className="stakes-table">
                           <tbody>
                             {stakes.map((stake, index) => {
-                              const formattedAddr = formatAddress(stake.staker);
-                              const addrParts = formattedAddr.split('x');
                               const isCreator = index === stakes.length - 1; // Last stake (oldest) is creator
                               const stakeDollars = Number(stake.amount) / 1_000_000;
                               
@@ -1078,7 +1077,7 @@ export default function Home() {
                                   <td className="stake-amount">${Math.floor(stakeDollars)}</td>
                                   <td className="stake-time">{formatTimeAgo(stake.timestamp)}</td>
                                   <td className="stake-address">
-                                    0<span style={{ textTransform: 'none' }}>x</span>{addrParts[1]}
+                                    <AddressDisplay address={stake.staker} />
                                     {isCreator && (
                                       <>
                                         {' '}

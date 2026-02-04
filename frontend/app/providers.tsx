@@ -2,8 +2,8 @@
 
 import { createWeb3Modal } from '@web3modal/wagmi/react';
 import { defaultWagmiConfig } from '@web3modal/wagmi';
-import { WagmiProvider } from 'wagmi';
-import { baseSepolia } from 'wagmi/chains';
+import { WagmiProvider, http } from 'wagmi';
+import { baseSepolia, mainnet } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 
@@ -20,10 +20,15 @@ const metadata = {
 };
 
 // Create wagmi config using Web3Modal's helper
+// Include mainnet for ENS resolution even when on testnet
 const config = defaultWagmiConfig({
-  chains: [baseSepolia],
+  chains: [baseSepolia, mainnet],
   projectId: walletConnectProjectId,
   metadata,
+  transports: {
+    [baseSepolia.id]: http('https://sepolia.base.org'),
+    [mainnet.id]: http(), // Use public RPC for ENS lookups
+  },
 });
 
 // Create the Web3Modal instance
