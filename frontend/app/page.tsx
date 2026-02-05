@@ -865,7 +865,7 @@ export default function Home() {
                 <section className="hero">
                   <h1 className="camelcase">extracredible</h1>
                   <p className="content">
-                    Staking money on a statement makes it more believable. This costly signal proves conviction, even just a little bit, which is more than you can say about anything else you read online. $2 says you mean it.
+                    Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal makes it at least a little bit sincere. $2 says you mean it.
                   </p>
 
                   <div className="hero-input">
@@ -887,7 +887,7 @@ export default function Home() {
 
                   <div className="hero-info">
                     <p className="content">
-                      Unstake anytime and get your $2 back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
+                      Unstake and get your money back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
                     </p>
                   </div>
                 </section>
@@ -895,7 +895,7 @@ export default function Home() {
           <section className="compose">
             <h1 className="camelcase">extracredible</h1>
             <p className="content">
-              Staking money on a statement makes it more believable. This costly signal proves conviction, even just a little bit, which is more than you can say about anything else you read online. $2 says you mean it.
+              Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal makes it at least a little bit sincere. $2 says you mean it.
             </p>
 
             <form
@@ -945,7 +945,7 @@ export default function Home() {
 
             <div className="compose-info">
               <p className="content">
-                Unstake anytime and get your $2 back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
+                Unstake and get your money back. No loss, no reward. Just the record of your words onchain, timestamped and verified.
               </p>
             </div>
           </section>
