@@ -53,6 +53,31 @@ function formatTxHash(hash: string): string {
   return `${hash.slice(0, 6)}...`;
 }
 
+/** Convert raw viem/contract errors into short, user-friendly messages */
+function friendlyError(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+
+  if (msg.includes('user rejected') || msg.includes('User rejected') || msg.includes('User denied')) {
+    return 'Transaction cancelled.';
+  }
+  if (msg.includes('Cannot decode zero data') || msg.includes('returned no data')) {
+    return 'Contract not available — please make sure your wallet is on Base Sepolia.';
+  }
+  if (msg.includes('Insufficient') || msg.includes('insufficient funds')) {
+    return 'Insufficient funds for gas. Use the "$" button to get testnet ETH.';
+  }
+  if (msg.includes('network') || msg.includes('provider') || msg.includes('timeout') || msg.includes('connection') || msg.includes('disconnected')) {
+    return 'Network error. Try disconnecting and reconnecting your wallet.';
+  }
+  if (msg.includes('chain') || msg.includes('Chain')) {
+    return 'Wrong network — please switch to Base Sepolia.';
+  }
+
+  // Truncate raw errors so users don't see a wall of text
+  const firstLine = msg.split('\n')[0];
+  return firstLine.length > 120 ? firstLine.slice(0, 120) + '…' : firstLine;
+}
+
 export default function Home() {
   const { address, isConnected, chain } = useAccount();
   const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
@@ -291,8 +316,7 @@ export default function Home() {
       setFaucetTxHash((prev) => ({ ...prev, usdc: mintTx }));
     } catch (error: unknown) {
       console.error('Faucet USDC error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to mint USDC';
-      setFaucetStatus(errorMessage);
+      setFaucetStatus(friendlyError(error));
     } finally {
       setFaucetLoading(null);
     }
@@ -451,24 +475,7 @@ export default function Home() {
       }, 1000);
     } catch (error: unknown) {
       console.error('Stake error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Stake failed';
-      
-      // Detect signs of stuck wallet
-      if (errorMessage.includes('user rejected') || 
-          errorMessage.includes('User rejected') ||
-          errorMessage.includes('User denied')) {
-        // User intentionally cancelled - not a stuck wallet
-        setStatus('Transaction cancelled');
-      } else if (errorMessage.includes('network') || 
-                 errorMessage.includes('provider') ||
-                 errorMessage.includes('timeout') ||
-                 errorMessage.includes('connection')) {
-        // Network/provider issues
-        setStatus(`❌ ${errorMessage}. Try disconnecting and reconnecting your wallet.`);
-      } else {
-        setStatus(`❌ ${errorMessage}`);
-      }
-      
+      setStatus(`❌ ${friendlyError(error)}`);
       setProgress(0);
       setProgressMessage('');
       setLoadingBeliefId(null);
@@ -554,24 +561,7 @@ export default function Home() {
       }, 1000);
     } catch (error: unknown) {
       console.error('Unstake error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unstake failed';
-      
-      // Detect signs of stuck wallet
-      if (errorMessage.includes('user rejected') || 
-          errorMessage.includes('User rejected') ||
-          errorMessage.includes('User denied')) {
-        // User intentionally cancelled - not a stuck wallet
-        setStatus('Transaction cancelled');
-      } else if (errorMessage.includes('network') || 
-                 errorMessage.includes('provider') ||
-                 errorMessage.includes('timeout') ||
-                 errorMessage.includes('connection')) {
-        // Network/provider issues
-        setStatus(`❌ ${errorMessage}. Try disconnecting and reconnecting your wallet.`);
-      } else {
-        setStatus(`❌ ${errorMessage}`);
-      }
-      
+      setStatus(`❌ ${friendlyError(error)}`);
       setProgress(0);
       setProgressMessage('');
       setLoadingBeliefId(null);
@@ -769,24 +759,7 @@ export default function Home() {
       }
     } catch (error: unknown) {
       console.error('Error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Transaction failed';
-      
-      // Detect signs of stuck wallet
-      if (errorMessage.includes('user rejected') || 
-          errorMessage.includes('User rejected') ||
-          errorMessage.includes('User denied')) {
-        // User intentionally cancelled - not a stuck wallet
-        setStatus('Transaction cancelled');
-      } else if (errorMessage.includes('network') || 
-                 errorMessage.includes('provider') ||
-                 errorMessage.includes('timeout') ||
-                 errorMessage.includes('connection')) {
-        // Network/provider issues
-        setStatus(`❌ ${errorMessage}. Try disconnecting and reconnecting your wallet.`);
-      } else {
-        setStatus(`❌ ${errorMessage}`);
-      }
-      
+      setStatus(`❌ ${friendlyError(error)}`);
       setProgress(0);
       setProgressMessage('');
     } finally {

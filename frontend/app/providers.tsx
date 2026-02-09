@@ -37,7 +37,7 @@ export function Providers({ children }: { children: ReactNode }) {
           accentColor: '#002FA7', // Klein Blue
         },
         loginMethods: ['wallet'],
-        supportedChains: [baseSepolia, mainnet],
+        supportedChains: [baseSepolia],
         defaultChain: baseSepolia,
       }}
     >
