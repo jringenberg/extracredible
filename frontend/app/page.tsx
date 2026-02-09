@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './Header';
-import { useAccount, useWalletClient, usePublicClient, useDisconnect } from 'wagmi';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
+import { useAccount, useWalletClient, usePublicClient, useDisconnect, useSwitchChain } from 'wagmi';
+import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { getBeliefs, getBeliefStakes } from '@/lib/subgraph';
@@ -55,10 +55,18 @@ function formatTxHash(hash: string): string {
 
 export default function Home() {
   const { address, isConnected, chain } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
+  const publicClient = usePublicClient({ chainId: baseSepolia.id });
   const { disconnect } = useDisconnect();
-  const { open: openConnectModal } = useWeb3Modal();
+  const { switchChain } = useSwitchChain();
+  const { login: openConnectModal } = usePrivy();
+
+  // Auto-switch to Base Sepolia when connected on wrong chain
+  useEffect(() => {
+    if (isConnected && chain && chain.id !== baseSepolia.id) {
+      switchChain({ chainId: baseSepolia.id });
+    }
+  }, [isConnected, chain, switchChain]);
 
   const [belief, setBelief] = useState('');
   const [loading, setLoading] = useState(false);
@@ -201,8 +209,8 @@ export default function Home() {
               
               const [amount] = result as [bigint, bigint];
               return [belief.id, amount > 0n] as const;
-            } catch (error) {
-              console.error('Error checking stake:', error);
+            } catch {
+              // Expected for beliefs where user has no stake or contract returns no data
               return [belief.id, false] as const;
             }
           })
@@ -326,11 +334,17 @@ export default function Home() {
   }
 
   async function handleStake(attestationUID: string) {
-    if (!walletClient || !publicClient || !address) return;
-    
-    // Check chain is correctly set
-    if (!chain || chain.id !== baseSepolia.id) {
-      setStatus('⚠️ Please ensure your wallet is connected to Base Sepolia network');
+    if (!address) {
+      openConnectModal();
+      return;
+    }
+    if (!walletClient || !publicClient) {
+      if (!chain || chain.id !== baseSepolia.id) {
+        switchChain({ chainId: baseSepolia.id });
+        setStatus('⚠️ Switching to Base Sepolia — please try again.');
+      } else {
+        setStatus('⚠️ Wallet is connecting, please try again in a moment.');
+      }
       return;
     }
     
@@ -462,11 +476,13 @@ export default function Home() {
   }
 
   async function handleUnstake(attestationUID: string) {
-    if (!walletClient || !publicClient) return;
-    
-    // Check chain is correctly set
-    if (!chain || chain.id !== baseSepolia.id) {
-      setStatus('⚠️ Please ensure your wallet is connected to Base Sepolia network');
+    if (!walletClient || !publicClient) {
+      if (!chain || chain.id !== baseSepolia.id) {
+        switchChain({ chainId: baseSepolia.id });
+        setStatus('⚠️ Switching to Base Sepolia — please try again.');
+      } else {
+        setStatus('⚠️ Wallet is connecting, please try again in a moment.');
+      }
       return;
     }
     
@@ -563,14 +579,17 @@ export default function Home() {
   }
 
   async function handleCreateAndStake() {
-    if (!walletClient || !publicClient || !address) {
+    if (!address) {
       openConnectModal();
       return;
     }
-    
-    // Check chain is correctly set
-    if (!chain || chain.id !== baseSepolia.id) {
-      setStatus('⚠️ Please ensure your wallet is connected to Base Sepolia network');
+    if (!walletClient || !publicClient) {
+      if (!chain || chain.id !== baseSepolia.id) {
+        switchChain({ chainId: baseSepolia.id });
+        setStatus('⚠️ Switching to Base Sepolia — please try again.');
+      } else {
+        setStatus('⚠️ Wallet is connecting, please try again in a moment.');
+      }
       return;
     }
     

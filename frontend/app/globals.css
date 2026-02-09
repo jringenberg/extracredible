@@ -10,7 +10,7 @@ body {
   min-height: 100vh;
 }
 
-/* Web3Modal Connect Button Styling */
+/* Connect Button Styling */
 .btn-connect {
   padding: 10px 20px;
   border: 1px solid var(--color-accent);
