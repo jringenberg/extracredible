@@ -69,7 +69,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text-primary);
-  background: var(--color-accent-1);
+  background: var(--color-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -112,11 +112,11 @@ h1 {
 
 /* Content text */
 .content {
-  margin-top: 1.5rem;
+  margin-top: 0;
   margin-bottom: 0;
   font-family: 'Times New Roman', Times, serif;
-  font-size: 1.4rem;
-  line-height: 2rem;
+  font-size: 1.2rem;
+  line-height: 1.8rem;
   color: var(--color-accent);
 }
 
@@ -177,19 +177,22 @@ ul {
   letter-spacing: 0.08em;
 }
 
-/* Sticky Header */
-.sticky-header {
+/* Fixed nav buttons */
+.nav-fixed {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: transparent;
+  top: 1rem;
   z-index: 100;
+}
+
+.nav-left {
+  left: 1rem;
+}
+
+.nav-right {
+  right: 1rem;
+  height: 2.625rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid transparent;
 }
 
 .dollar-button {
@@ -207,12 +210,111 @@ ul {
   padding: 0;
 }
 
+/* Column titles — shared between left and right */
+.col-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.5rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 2.625rem;
+  text-align: left;
+  margin: 0 0 1rem 0;
+  color: var(--color-black);
+  white-space: nowrap;
+}
+
 /* Layout */
 .page {
-  max-width: 34rem;
-  margin: 0 auto;
-  padding: 0;
   position: relative;
+}
+
+/* Two-column layout */
+.two-col {
+  display: flex;
+  gap: 4rem;
+  padding-left: 4.625rem;
+}
+
+.two-col .col-left {
+  flex: 0 0 22rem;
+  color: var(--color-black);
+}
+
+.two-col .col-right {
+  flex: 0 0 22rem;
+  min-width: 0;
+}
+
+/* Pin the left column so it never scrolls */
+.col-left-fixed {
+  position: fixed;
+  top: 1rem;
+  left: 4.625rem;
+  width: 22rem;
+}
+
+/* Pin the right column header so beliefs scroll behind it */
+.col-right-header {
+  position: sticky;
+  top: 0;
+  background: var(--color-white);
+  z-index: 50;
+  padding: 1rem 0 1rem 0;
+}
+
+/* Override accent-colored text to black inside left column */
+.col-left .content,
+.col-left h1 {
+  color: var(--color-black);
+}
+
+.col-left .btn {
+  border-color: var(--color-black);
+  color: var(--color-black);
+}
+
+@media (max-width: 48rem) {
+  .nav-left {
+    left: 0.5rem;
+  }
+
+  .sort-header {
+    height: auto;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .two-col {
+    flex-direction: column;
+    gap: 2rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    align-items: center;
+  }
+
+  .two-col .col-left {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 20rem;
+  }
+
+  .col-left-fixed {
+    position: static;
+    left: auto;
+    width: 100%;
+  }
+
+  .two-col .col-right {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 22rem;
+  }
+
+  .col-right-header {
+    position: static;
+    padding: 0;
+  }
 }
 
 
@@ -237,7 +339,7 @@ ul {
 }
 
 .main {
-  margin-top: 6rem;
+  margin-top: 0;
   margin-bottom: 5rem;
 }
 
@@ -248,16 +350,6 @@ ul {
   letter-spacing: 0.08em;
 }
 
-.camelcase {
-  text-transform: none;
-  font-size: 3.6rem;
-  font-weight: normal;
-  letter-spacing: 2px;
-  white-space: nowrap;
-  text-align: center;
-  line-height: 1.2;
-  color: var(--color-accent);
-}
 
 .hero,
 .compose {
@@ -430,64 +522,57 @@ ul {
 /* Beliefs Section */
 .beliefs {
   width: 100%;
-  margin-top: 2rem;
+  margin-top: 0;
 }
 
-.sort-dropdown {
-  position: relative;
-  margin-top: 3rem;
-  margin-bottom: 2rem;
+@media (max-width: 48rem) {
+  .beliefs {
+    margin-top: 2rem;
+  }
+}
+
+/* Sort header */
+.sort-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  height: 2.625rem;
 }
 
-.sort-button {
-  padding: 0.7rem 1rem;
+.sort-header .col-title {
+  margin-bottom: 0;
+}
+
+.sort-controls {
+  position: relative;
+  display: inline-flex;
+}
+
+.sort-trigger {
+  height: 2.625rem;
+  padding: 0 1rem;
   background: transparent;
   border: 1px solid var(--color-black);
+  border-radius: 1.125rem;
   color: var(--color-black);
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-radius: 1.125rem;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 0.5rem;
-  transition: background 0.2s;
-}
-
-.sort-button:hover {
-  background: var(--color-gray-1);
-}
-
-.dropdown-arrow {
-  font-size: 0.625rem;
-}
-
-.sort-select-native {
-  /* Reset to browser defaults */
-  all: revert;
-  
-  /* Only override positioning */
-  position: absolute !important;
-  top: calc(2.625rem + 0.5rem) !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  z-index: 10 !important;
-}
-
-.sort-selection {
   white-space: nowrap;
-  font-size: 2rem;
-  line-height: 1.5;
-  text-align: center;
+  pointer-events: none;
+}
+
+.sort-native {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
 }
 
 .beliefs-list {
@@ -503,13 +588,35 @@ ul {
   width: 100%;
 }
 
-.belief-text {
-  padding: 1.5rem 1.5rem 1.8rem 1.5rem;
+/* Square belief card with auto-scaling text */
+.belief-square {
+  width: 100%;
+  aspect-ratio: 1 / 1;
   background: var(--color-black);
   color: var(--color-white);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+/* Fitty measures parentNode.clientWidth, so this wrapper
+   gives it the actual content width (square minus padding) */
+.belief-square-measure {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.belief-square-text {
   font-family: 'Times New Roman', Times, serif;
-  font-size: 1.5rem;
-  line-height: 1.875rem;
+  line-height: 1.15;
+  text-align: left;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .belief-details {
@@ -667,13 +774,25 @@ ul {
 }
 
 /* Faucet Modal */
-body.faucet-active .sticky-header {
-  background: var(--color-black);
-}
-
 body.faucet-active .dollar-button {
   background: var(--color-white);
   color: var(--color-black);
+}
+
+.btn-connect {
+  height: 2.625rem;
+  padding: 0 1rem;
+  background: transparent;
+  border: 1px solid var(--color-black);
+  border-radius: 1.125rem;
+  color: var(--color-black);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 body.faucet-active .btn-connect {
@@ -751,17 +870,8 @@ body.faucet-active .disconnect-link {
 }
 
 /* Responsive */
-@media (max-width: 32rem) {
-  .page {
-    padding: 0 1rem;
-  }
-}
 
 @media (max-width: 30rem) {
-  .header-title {
-    font-size: 0.875rem;
-  }
-
   .hero-title,
   .compose-title {
     font-size: 1.25rem;
@@ -907,7 +1017,7 @@ body.faucet-active .disconnect-link {
   display: block;
 }
 
-.belief-link:hover .belief-text {
+.belief-link:hover .belief-square {
   opacity: 0.7;
 }
 

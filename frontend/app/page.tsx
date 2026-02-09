@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Header } from './Header';
+import { ConnectButton } from './ConnectButton';
 import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
@@ -10,6 +10,7 @@ import { publicClient } from '@/lib/client';
 import { getBeliefs, getBeliefStakes } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
 import { AddressDisplay } from '@/components/AddressDisplay';
+import { BeliefCard } from '@/components/BeliefCard';
 import {
   CONTRACTS,
   EAS_WRITE_ABI,
@@ -108,7 +109,6 @@ export default function Home() {
     }>
   >([]);
   const [sortOption, setSortOption] = useState<'popular' | 'recent' | 'wallet'>('popular');
-  const [showSortMenu, setShowSortMenu] = useState(false);
   const [userStakes, setUserStakes] = useState<Record<string, boolean>>({});
   const [loadingBeliefId, setLoadingBeliefId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -173,21 +173,6 @@ export default function Home() {
       setSortOption('popular');
     }
   }, [isConnected, sortOption]);
-
-  // Close sort menu when clicking outside
-  useEffect(() => {
-    if (!showSortMenu) return;
-    
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.sort-dropdown')) {
-        setShowSortMenu(false);
-      }
-    };
-    
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, [showSortMenu]);
 
   // Filter and sort beliefs based on selected option
   const displayedBeliefs = beliefs.filter((belief) => {
@@ -767,11 +752,16 @@ export default function Home() {
 
   return (
     <>
-      <Header 
-        onDollarClick={toggleFaucetModal} 
-        isInverted={showFaucetModal} 
-        isConnected={isConnected}
-      />
+      <button 
+        className={`dollar-button nav-fixed nav-left ${showFaucetModal ? 'inverted' : ''}`}
+        onClick={toggleFaucetModal}
+        title="Get test funds"
+      >
+        $
+      </button>
+      <div className="nav-fixed nav-right">
+        <ConnectButton />
+      </div>
 
             <div className="page">
               <main className="main">
@@ -850,10 +840,12 @@ export default function Home() {
                   
                 </section>
               ) : (
-                <>
+                <div className="two-col">
+                <div className="col-left">
+                <div className="col-left-fixed">
+                  <h1 className="col-title">Legitify</h1>
                 {!isConnected ? (
                 <section className="hero">
-                  <h1 className="camelcase">extracredible</h1>
                   <p className="content">
                     Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal carries sincerity. $2 says you mean it.
                   </p>
@@ -883,7 +875,6 @@ export default function Home() {
                 </section>
               ) : (
           <section className="compose">
-            <h1 className="camelcase">extracredible</h1>
             <p className="content">
               Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal carries sincerity. $2 says you mean it.
             </p>
@@ -940,42 +931,42 @@ export default function Home() {
             </div>
           </section>
         )}
+        </div>
+        </div>
 
-        <section className="beliefs">
-          <div className="sort-dropdown">
-            <button
-              className="sort-button"
-              onClick={() => setShowSortMenu(!showSortMenu)}
-            >
-              Show
-              <span className="dropdown-arrow">{showSortMenu ? '▲' : '▼'}</span>
-            </button>
-            <div className="sort-selection allcaps">
-              {sortOption === 'popular' && 'Popular Beliefs'}
-              {sortOption === 'recent' && 'Recent Beliefs'}
-              {sortOption === 'wallet' && address && `Connected Wallet ${truncateAddress(address)}`}
+        <div className="col-right">
+          <div className="col-right-header">
+            <div className="sort-header">
+              <div className="sort-controls">
+                <div className="sort-trigger" aria-hidden="true">
+                  <span>Sort</span>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <select
+                  id="belief-sort-select"
+                  className="sort-native"
+                  value={sortOption}
+                  onChange={(e) => {
+                    setSortOption(e.target.value as 'popular' | 'recent' | 'wallet');
+                  }}
+                >
+                  <option value="popular">Popular Beliefs</option>
+                  <option value="recent">Recent Beliefs</option>
+                  {isConnected && address && (
+                    <option value="wallet">My Wallet ({truncateAddress(address)})</option>
+                  )}
+                </select>
+              </div>
+              <h2 className="col-title">
+                {sortOption === 'popular' && 'Popular Beliefs'}
+                {sortOption === 'recent' && 'Recent Beliefs'}
+                {sortOption === 'wallet' && address && `My Wallet (${truncateAddress(address)})`}
+              </h2>
             </div>
-            {showSortMenu && (
-              <select
-                className="sort-select-native"
-                value={sortOption}
-                onChange={(e) => {
-                  setSortOption(e.target.value as 'popular' | 'recent' | 'wallet');
-                  setShowSortMenu(false);
-                }}
-                onBlur={() => setShowSortMenu(false)}
-                size={isConnected && address ? 3 : 2}
-                autoFocus
-              >
-                <option value="popular">Popular Beliefs</option>
-                <option value="recent">Recent Beliefs</option>
-                {isConnected && address && (
-                  <option value="wallet">Connected Wallet {truncateAddress(address)}</option>
-                )}
-              </select>
-            )}
           </div>
-
+        <section className="beliefs">
           <ul className="beliefs-list">
             {displayedBeliefs.map((beliefItem) => {
               const totalStaked = BigInt(beliefItem.totalStaked || '0');
@@ -990,13 +981,10 @@ export default function Home() {
 
               return (
                 <li key={beliefItem.id} className="belief-card">
-                  <div 
-                    className="belief-text"
+                  <BeliefCard
+                    text={text}
                     onClick={() => toggleBeliefDetails(beliefItem.id)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {text}
-                  </div>
+                  />
                   
                   <div className={`belief-details ${isDetailsOpen ? 'open' : ''}`}>
                     <div>
@@ -1084,7 +1072,8 @@ export default function Home() {
 
           {!loading && status && <p className="status">{status}</p>}
         </section>
-        </>
+        </div>
+        </div>
       )}
       </main>
       </div>
