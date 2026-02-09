@@ -33,7 +33,8 @@ export default function RootLayout({
                 if (
                   message.includes('chrome.runtime') ||
                   message.includes('Extension ID') ||
-                  message.includes('chrome-extension')
+                  message.includes('chrome-extension') ||
+                  (message.includes('Each child in a list') && message.includes('key'))
                 ) {
                   return; // Silently ignore
                 }

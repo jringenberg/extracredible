@@ -728,7 +728,7 @@ export default function Home() {
 
         try {
           const latestBeliefs = await getBeliefs();
-          found = latestBeliefs.some((b) => b.id === attestationUID);
+          found = latestBeliefs.some((b) => b.id === attestationUID && BigInt(b.totalStaked || '0') > 0n);
 
           if (found) {
             setProgress(100);

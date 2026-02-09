@@ -3,7 +3,7 @@
 import { usePrivy } from '@privy-io/react-auth';
 import { useAccount } from 'wagmi';
 
-export function Web3ModalButton() {
+export function ConnectButton() {
   const { login, logout, ready, authenticated } = usePrivy();
   const { address, isConnected } = useAccount();
 
@@ -11,7 +11,9 @@ export function Web3ModalButton() {
 
   const handleClick = () => {
     if (connected) {
-      logout();
+      if (window.confirm('Disconnect wallet?')) {
+        logout();
+      }
     } else {
       login();
     }

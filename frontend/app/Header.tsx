@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Web3ModalButton } from './Web3ModalButton';
+import { ConnectButton } from './ConnectButton';
 
 interface HeaderProps {
   onDollarClick: () => void;
@@ -23,7 +23,7 @@ export const Header = memo(function Header({
       >
         $
       </button>
-      <Web3ModalButton />
+      <ConnectButton />
     </header>
   );
 });
