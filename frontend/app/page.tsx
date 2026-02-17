@@ -7,7 +7,7 @@ import { usePrivy } from '@privy-io/react-auth';
 import { baseSepolia } from 'wagmi/chains';
 import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { publicClient } from '@/lib/client';
-import { getBeliefs, getBeliefStakes } from '@/lib/subgraph';
+import { getBeliefs, getBeliefStakes, getAccountStakes, getBelief } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
 import { AddressDisplay } from '@/components/AddressDisplay';
 import { BeliefCard } from '@/components/BeliefCard';
@@ -27,26 +27,28 @@ function truncateAddress(addr: string): string {
 
 function formatTimeAgo(timestamp: string): string {
   const now = Date.now();
-  const then = parseInt(timestamp) * 1000; // Convert to milliseconds
+  const then = parseInt(timestamp) * 1000;
   const diff = now - then;
   
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
   
-  if (minutes < 5) return 'JUST NOW';
-  if (minutes < 60) return `${minutes} MIN AGO`;
-  if (hours < 24) return `${hours} HR AGO`;
-  if (days < 7) return `${days} DAY AGO`;
+  if (minutes < 1) return 'just now';
+  if (minutes === 1) return '1 minute ago';
+  if (minutes < 60) return `${minutes} minutes ago`;
+  if (hours === 1) return '1 hour ago';
+  if (hours < 24) return `${hours} hours ago`;
+  if (days === 1) return '1 day ago';
+  if (days < 30) return `${days} days ago`;
   
-  // Format as date
-  const date = new Date(then);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatAddress(addr: string): string {
-  if (!addr) return '';
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const months = Math.floor(days / 30);
+  if (months === 1) return '1 month ago';
+  if (months < 12) return `${months} months ago`;
+  
+  const years = Math.floor(days / 365);
+  if (years === 1) return '1 year ago';
+  return `${years} years ago`;
 }
 
 function formatTxHash(hash: string): string {
@@ -79,7 +81,14 @@ function friendlyError(error: unknown): string {
   return firstLine.length > 120 ? firstLine.slice(0, 120) + '…' : firstLine;
 }
 
-export default function Home() {
+export type SortOption = 'popular' | 'recent' | 'wallet' | 'account' | 'belief';
+
+export interface HomeContentProps {
+  initialSort?: SortOption;
+  filterValue?: string;
+}
+
+export function HomeContent({ initialSort = 'popular', filterValue }: HomeContentProps) {
   const { address, isConnected, chain } = useAccount();
   const { data: walletClient } = useWalletClient({ chainId: baseSepolia.id });
   const { switchChain } = useSwitchChain();
@@ -108,11 +117,10 @@ export default function Home() {
       lastStakedAt: string;
     }>
   >([]);
-  const [sortOption, setSortOption] = useState<'popular' | 'recent' | 'wallet'>('popular');
+  const [sortOption, setSortOption] = useState<SortOption>(initialSort);
   const [userStakes, setUserStakes] = useState<Record<string, boolean>>({});
   const [loadingBeliefId, setLoadingBeliefId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [textareaFocused, setTextareaFocused] = useState(false);
   const [showFaucetModal, setShowFaucetModal] = useState(false);
   
   // Memoize the modal toggle to prevent unnecessary re-renders
@@ -123,6 +131,7 @@ export default function Home() {
   const [faucetStatus, setFaucetStatus] = useState('');
   const [faucetTxHash, setFaucetTxHash] = useState<{ eth?: string; usdc?: string }>({});
   const [contractAddressCopied, setContractAddressCopied] = useState(false);
+  const [leftColOpen, setLeftColOpen] = useState(true);
   const [openBeliefDetails, setOpenBeliefDetails] = useState<Record<string, boolean>>({});
   const [beliefStakes, setBeliefStakes] = useState<Record<string, Array<{
     staker: string;
@@ -154,18 +163,47 @@ export default function Home() {
 
 
 
+  // Track which belief IDs belong to a filtered account view
+  const [accountBeliefIds, setAccountBeliefIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     async function fetchBeliefs() {
       try {
         const fetchedBeliefs = await getBeliefs();
         setBeliefs(fetchedBeliefs);
+
+        // For 'account' sort, also fetch that address's stakes and merge beliefs
+        if (initialSort === 'account' && filterValue) {
+          const accountStakes = await getAccountStakes(filterValue);
+          const accountBeliefs = accountStakes.map(s => s.belief);
+          const accountIds = new Set(accountBeliefs.map(b => b.id));
+          setAccountBeliefIds(accountIds);
+
+          // Merge any beliefs not already in the main list
+          const existingIds = new Set(fetchedBeliefs.map(b => b.id));
+          const newBeliefs = accountBeliefs.filter(b => !existingIds.has(b.id));
+          if (newBeliefs.length > 0) {
+            setBeliefs(prev => [...prev, ...newBeliefs]);
+          }
+        }
+
+        // For 'belief' sort, ensure the specific belief is in the list
+        if (initialSort === 'belief' && filterValue) {
+          const existingIds = new Set(fetchedBeliefs.map(b => b.id));
+          if (!existingIds.has(filterValue)) {
+            const singleBelief = await getBelief(filterValue);
+            if (singleBelief) {
+              setBeliefs(prev => [...prev, singleBelief]);
+            }
+          }
+        }
       } catch (error) {
         console.error('Error fetching beliefs:', error);
       }
     }
 
     fetchBeliefs();
-  }, []);
+  }, [initialSort, filterValue]);
 
   // Reset to "popular" if user disconnects while on "wallet" filter
   useEffect(() => {
@@ -175,25 +213,26 @@ export default function Home() {
   }, [isConnected, sortOption]);
 
   // Filter and sort beliefs based on selected option
-  const displayedBeliefs = beliefs.filter((belief) => {
+  const displayedBeliefs = beliefs.filter((b) => {
     if (sortOption === 'popular' || sortOption === 'recent') {
-      // Only show beliefs with non-zero stake
-      return BigInt(belief.totalStaked || '0') > 0n;
+      return BigInt(b.totalStaked || '0') > 0n;
     }
-    // For 'wallet' option, show beliefs where connected wallet has an active stake
     if (sortOption === 'wallet' && address) {
-      return userStakes[belief.id] === true;
+      return userStakes[b.id] === true;
+    }
+    if (sortOption === 'account' && filterValue) {
+      return accountBeliefIds.has(b.id);
+    }
+    if (sortOption === 'belief' && filterValue) {
+      return b.id === filterValue;
     }
     return false;
   }).sort((a, b) => {
     if (sortOption === 'popular') {
-      // Sort by total staked (descending)
       return Number(BigInt(b.totalStaked || '0') - BigInt(a.totalStaked || '0'));
     } else if (sortOption === 'recent') {
-      // Sort by most recent stake activity (most recent first)
       return Number(b.lastStakedAt) - Number(a.lastStakedAt);
     }
-    // Default sort (for wallet option)
     return 0;
   });
 
@@ -843,21 +882,32 @@ export default function Home() {
                 <div className="two-col">
                 <div className="col-left">
                 <div className="col-left-fixed">
-                  <h1 className="col-title">Legitify</h1>
+                  <h1 className="col-title">
+                    Extracredible
+                    <button
+                      type="button"
+                      className="col-left-toggle"
+                      onClick={() => setLeftColOpen(prev => !prev)}
+                    >
+                      [{leftColOpen ? 'hide' : 'show'}]
+                    </button>
+                  </h1>
+                <div className={`col-left-body${leftColOpen ? '' : ' collapsed'}`}>
                 {!isConnected ? (
                 <section className="hero">
                   <p className="content">
                     Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal carries sincerity. $2 says you mean it.
                   </p>
 
-                  <div className="hero-input">
+                  <div className="hero-input compose-input">
                     <textarea
                       className="belief-textarea"
                       value={belief}
                       onChange={(e) => setBelief(e.target.value)}
                       placeholder="State your claim, prediction, commitment, belief..."
-                      maxLength={280}
+                      maxLength={550}
                     />
+                    <div className="char-counter">{belief.length}/550</div>
                   </div>
 
                   <button 
@@ -886,28 +936,25 @@ export default function Home() {
               }}
             >
               <div className="compose-input">
-                {textareaFocused && (
-                  <div className="char-counter-top">{belief.length}/280</div>
-                )}
                 <textarea
                   ref={textareaRef}
                   className="belief-textarea"
                   value={belief}
                   onChange={(e) => setBelief(e.target.value)}
-                  onFocus={() => setTextareaFocused(true)}
-                  onBlur={() => setTextareaFocused(false)}
                   onPaste={(e) => {
                     const paste = e.clipboardData.getData('text');
-                    if (belief.length + paste.length > 280) {
+                    if (belief.length + paste.length > 550) {
                       e.preventDefault();
-                      const remaining = 280 - belief.length;
+                      const remaining = 550 - belief.length;
                       setBelief(belief + paste.slice(0, remaining));
                     }
                   }}
                   placeholder="State your claim, prediction, commitment, belief..."
+                  maxLength={550}
                   disabled={loading}
                   rows={1}
                 />
+                <div className="char-counter">{belief.length}/550</div>
               </div>
 
               <button
@@ -933,38 +980,45 @@ export default function Home() {
         )}
         </div>
         </div>
+        </div>
 
         <div className="col-right">
           <div className="col-right-header">
-            <div className="sort-header">
-              <div className="sort-controls">
-                <div className="sort-trigger" aria-hidden="true">
-                  <span>Sort</span>
-                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-                <select
-                  id="belief-sort-select"
-                  className="sort-native"
-                  value={sortOption}
-                  onChange={(e) => {
-                    setSortOption(e.target.value as 'popular' | 'recent' | 'wallet');
-                  }}
-                >
-                  <option value="popular">Popular Beliefs</option>
-                  <option value="recent">Recent Beliefs</option>
-                  {isConnected && address && (
-                    <option value="wallet">My Wallet ({truncateAddress(address)})</option>
-                  )}
-                </select>
-              </div>
               <h2 className="col-title">
+                <span className="sort-controls">
+                  <span className="sort-trigger" aria-hidden="true">
+                    <span>Sort</span>
+                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                  <select
+                    id="belief-sort-select"
+                    className="sort-native"
+                    value={sortOption}
+                    onChange={(e) => {
+                      setSortOption(e.target.value as SortOption);
+                    }}
+                  >
+                    <option value="popular">Popular Beliefs</option>
+                    <option value="recent">Recent Beliefs</option>
+                    {isConnected && address && (
+                      <option value="wallet">My Wallet ({truncateAddress(address)})</option>
+                    )}
+                    {sortOption === 'account' && filterValue && (
+                      <option value="account">Wallet ({truncateAddress(filterValue)})</option>
+                    )}
+                    {sortOption === 'belief' && filterValue && (
+                      <option value="belief">Belief ({truncateAddress(filterValue)})</option>
+                    )}
+                  </select>
+                </span>
                 {sortOption === 'popular' && 'Popular Beliefs'}
                 {sortOption === 'recent' && 'Recent Beliefs'}
                 {sortOption === 'wallet' && address && `My Wallet (${truncateAddress(address)})`}
+                {sortOption === 'account' && filterValue && `Wallet (${truncateAddress(filterValue)})`}
+                {sortOption === 'belief' && filterValue && `Belief (${truncateAddress(filterValue)})`}
               </h2>
-            </div>
           </div>
         <section className="beliefs">
           <ul className="beliefs-list">
@@ -981,84 +1035,98 @@ export default function Home() {
 
               return (
                 <li key={beliefItem.id} className="belief-card">
-                  <BeliefCard
-                    text={text}
-                    onClick={() => toggleBeliefDetails(beliefItem.id)}
-                  />
-                  
-                  <div className={`belief-details ${isDetailsOpen ? 'open' : ''}`}>
-                    <div>
-                      {stakes.length > 0 && (
-                        <table className="stakes-table">
-                          <tbody>
-                            {stakes.map((stake, index) => {
-                              const isCreator = index === stakes.length - 1; // Last stake (oldest) is creator
-                              const stakeDollars = Number(stake.amount) / 1_000_000;
-                              
-                              return (
-                                <tr key={index}>
-                                  <td className="stake-amount">${Math.floor(stakeDollars)}</td>
-                                  <td className="stake-time">{formatTimeAgo(stake.timestamp)}</td>
-                                  <td className="stake-address">
-                                    <AddressDisplay address={stake.staker} />
-                                    {isCreator && (
-                                      <>
-                                        {' '}
-                                        <a 
-                                          href={`https://base-sepolia.easscan.org/attestation/view/${beliefItem.id}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="created-link"
-                                        >
-                                          CREATED
-                                        </a>
-                                      </>
-                                    )}
-                                  </td>
-                                  <td className="stake-tx">
-                                    TX{' '}
-                                    <a 
-                                      href={`https://sepolia.basescan.org/tx/${stake.transactionHash}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      {formatTxHash(stake.transactionHash)}
-                                    </a>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      )}
+                  <div className="belief-card-inner">
+                    <div className="belief-card-square">
+                      <BeliefCard text={text} />
                     </div>
-                  </div>
-
-                  <div className="belief-footer">
-                    <div className="belief-amount">${Math.floor(dollars)}</div>
-                    {hasStaked ? (
-                      <button 
-                        className="btn-stake"
-                        onClick={() => handleUnstake(beliefItem.id)}
-                        disabled={loading}
-                      >
-                        Unstake $2
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn-stake"
-                        onClick={() => {
-                          if (!isConnected) {
-                            openConnectModal();
-                          } else {
-                            handleStake(beliefItem.id);
-                          }
-                        }}
-                        disabled={loading}
-                      >
-                        {isConnected ? 'Stake $2' : 'Connect'}
-                      </button>
-                    )}
+                    <div className="belief-details-panel">
+                      <div className="belief-detail-row">
+                        <span className="belief-detail-line">
+                          <AddressDisplay address={beliefItem.attester as `0x${string}`} linkToAccount />
+                        </span>
+                        <span className="belief-detail-line belief-detail-line--right">
+                          {formatTimeAgo(beliefItem.createdAt)}
+                        </span>
+                      </div>
+                      <div className="belief-detail-row">
+                        <div className="belief-detail-block">
+                          <button
+                            type="button"
+                            className="belief-detail-link"
+                            onClick={() => toggleBeliefDetails(beliefItem.id)}
+                          >
+                            ${Math.floor(dollars)} total staked
+                          </button>
+                          {isDetailsOpen && stakes.length > 0 && (
+                            <ul className="belief-stakes-list">
+                              {stakes.map((stake, index) => {
+                                const isCreator = index === stakes.length - 1;
+                                const stakeDollars = Number(stake.amount) / 1_000_000;
+                                return (
+                                  <li key={index} className="belief-stake-row">
+                                    <span className="stake-amount">${Math.floor(stakeDollars)}</span>
+                                    <span className="stake-time">{formatTimeAgo(stake.timestamp)}</span>
+                                    <span className="stake-address">
+                                      <AddressDisplay address={stake.staker} />
+                                      {isCreator && (
+                                        <>
+                                          {' '}
+                                          <a
+                                            href={`https://base-sepolia.easscan.org/attestation/view/${beliefItem.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="created-link"
+                                          >
+                                            CREATED
+                                          </a>
+                                        </>
+                                      )}
+                                    </span>
+                                    <span className="stake-tx">
+                                      TX{' '}
+                                      <a
+                                        href={`https://sepolia.basescan.org/tx/${stake.transactionHash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        {formatTxHash(stake.transactionHash)}
+                                      </a>
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                        <span className="belief-detail-line belief-detail-line--right">
+                          {hasStaked ? (
+                            <button
+                              type="button"
+                              className="belief-detail-link"
+                              onClick={() => handleUnstake(beliefItem.id)}
+                              disabled={loading}
+                            >
+                              Unstake $2
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="belief-detail-link"
+                              onClick={() => {
+                                if (!isConnected) {
+                                  openConnectModal();
+                                } else {
+                                  handleStake(beliefItem.id);
+                                }
+                              }}
+                              disabled={loading}
+                            >
+                              Add $2
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   {isLoading && progress > 0 && (
                     <div className="belief-progress">
@@ -1079,4 +1147,8 @@ export default function Home() {
       </div>
     </>
   );
+}
+
+export default function Home() {
+  return <HomeContent />;
 }

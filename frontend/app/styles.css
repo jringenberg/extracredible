@@ -22,8 +22,8 @@
   
   /* Numbered shades (1 = lightest, 5 = darkest) */
   --color-accent-1: hsl(var(--accent-hue), 15%, 96%); /* Page background */
-  --color-accent-2: hsl(var(--accent-hue), 30%, 94%); /* Textarea default - very light */
-  --color-accent-3: hsl(var(--accent-hue), 35%, 88%); /* Textarea active - desaturated lavender */
+  --color-accent-2: hsl(0, 0%, 94%); /* Textarea default - light gray */
+  --color-accent-3: hsl(0, 0%, 90%); /* Textarea active - slightly darker gray */
   --color-accent-4: hsl(var(--accent-hue), var(--accent-sat), 45%); /* Light accent */
   --color-accent-5: hsl(var(--accent-hue), var(--accent-sat), 15%); /* Dark accent */
   
@@ -229,18 +229,30 @@ ul {
   position: relative;
 }
 
-/* Two-column layout */
+/*
+  Two-column layout:
+  1. Black belief boxes are centered on the whole page (22rem column in the middle).
+  2. Left col floats left in the available left space (past a $ button gutter).
+  3. Details overflow to the right of the black boxes.
+
+  Grid: 1fr | 22rem (centered beliefs) | 1fr
+  Left col lives in column 1 (left-aligned with margin).
+  Details overflow from column 2 into column 3.
+*/
 .two-col {
   display: grid;
   grid-template-columns: 1fr 22rem 1fr;
   align-items: start;
   width: 100%;
+  padding-top: 1rem;
 }
 
 .two-col .col-left {
   grid-column: 1;
   width: 22rem;
-  justify-self: center;
+  justify-self: start;
+  margin-left: 5rem;
+  align-self: stretch;
   color: var(--color-black);
 }
 
@@ -248,24 +260,32 @@ ul {
   grid-column: 2;
   width: 22rem;
   min-width: 0;
+  overflow: visible;
 }
 
-/* Left column is fixed while beliefs scroll */
+/* Left column sticks at same height as nav buttons */
 .col-left-fixed {
-  position: fixed;
+  position: sticky;
   top: 1rem;
-  left: calc((50vw - 33rem) / 2);
-  width: 22rem;
-  z-index: 40;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  width: 100%;
 }
 
-/* Pin the right column header so beliefs scroll behind it */
+/* Right column header — explicit height, solid white to mask scrolling content */
 .col-right-header {
   position: sticky;
   top: 0;
+  height: 4.625rem;
+  padding-top: 1rem;
+  margin-top: -1rem;
   background: var(--color-white);
   z-index: 50;
-  padding: 1rem 0 1rem 0;
+  overflow: hidden;
+}
+
+.col-right-header .col-title {
+  margin: 0;
 }
 
 /* Override accent-colored text to black inside left column */
@@ -279,55 +299,142 @@ ul {
   color: var(--color-black);
 }
 
-@media (max-width: 64rem) {
-  .nav-left {
-    left: 0.5rem;
+/* Collapsed left col toggle — hidden on wide, shown at stage 3 */
+.col-left-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gray-disabled);
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.col-left-toggle:hover {
+  color: var(--color-black);
+}
+
+/* col-left-body: always visible on wide screens regardless of JS state */
+.col-left-body.collapsed {
+  display: block;
+}
+
+/*
+  STAGE 1 (≤82rem): Black boxes lose centering.
+  At 82rem the natural gap between left col and center equals the packed 3rem gap,
+  so the transition is seamless. Below this, the centered layout would pinch the gap.
+*/
+@media (max-width: 82rem) {
+  .two-col {
+    grid-template-columns: 5rem 22rem 3rem 22rem 1fr;
   }
 
-  .sort-header {
-    height: auto;
-    flex-direction: column;
-    align-items: flex-start;
+  .two-col .col-left {
+    grid-column: 2;
+    margin-left: 0;
   }
 
+  .two-col .col-right {
+    grid-column: 4;
+  }
+}
+
+/*
+  STAGE 2 (≤66rem): Details bump below their box.
+  Packed layout needs 5+22+3+22+14=66rem for details to fit right.
+  Details become 2 rows with left/right pairs.
+  Grid stays side-by-side but drops the 1fr overflow column.
+  Header gets top padding to clear fixed nav buttons.
+*/
+@media (max-width: 66rem) {
+  .two-col {
+    grid-template-columns: 5rem 22rem 3rem 22rem;
+    padding-top: 4.5rem;
+  }
+
+  .two-col .col-right {
+    grid-column: 4;
+  }
+
+  .col-left-fixed {
+    top: 4.5rem;
+    max-height: calc(100vh - 5.5rem);
+  }
+
+  .col-right-header {
+    top: 0;
+  }
+}
+
+/*
+  STAGE 3 (≤52rem): Columns stack vertically.
+  Two 22rem columns no longer fit side by side (5+22+3+22=52rem).
+  Both columns centered, stacked on top of each other.
+*/
+@media (max-width: 52rem) {
   .two-col {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 0;
     padding: 0 1rem;
+    padding-top: 4.5rem;
     align-items: center;
   }
 
   .two-col .col-left {
-    width: 100%;
-    max-width: 22rem;
-    justify-self: auto;
+    width: 22rem;
+    max-width: 100%;
+    margin-left: 0;
+    align-self: center;
   }
 
-  /* Mobile collapsed create column: title row only */
+  .two-col .col-right {
+    width: 22rem;
+    max-width: 100%;
+    margin-top: 3rem;
+  }
+
   .col-left-fixed {
     position: static;
-    left: auto;
-    width: 100%;
   }
 
-  .col-left .hero,
-  .col-left .compose {
-    display: none;
+  .col-right-header {
+    position: static;
+    height: auto;
+    display: block;
+    overflow: visible;
+    padding: 0 0 1rem 0;
+  }
+}
+
+/*
+  STAGE 4 (≤40rem): Left col collapses.
+  H1 + [hide]/[show] toggle sits above the sort + beliefs stack.
+*/
+@media (max-width: 40rem) {
+  .nav-left {
+    left: 0.5rem;
   }
 
   .col-left .col-title {
     margin-bottom: 0;
   }
 
-  .two-col .col-right {
-    width: 100%;
-    max-width: 22rem;
+  .col-left-toggle {
+    display: inline;
   }
 
-  .col-right-header {
-    position: static;
-    padding: 0 0 1rem 0;
+  /* Left col body hidden by JS toggle in this range */
+  .col-left-body.collapsed {
+    display: none;
+  }
+
+  .col-left-body {
+    margin-top: 1rem;
   }
 }
 
@@ -372,17 +479,17 @@ ul {
 
 .hero-input,
 .compose-input {
+  margin-top: 1rem;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   position: relative;
-  padding-top: 1.5rem;
 }
 
-.char-counter-top {
+.char-counter {
   position: absolute;
-  top: 0;
-  right: 0;
+  bottom: 1rem;
+  right: 1rem;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
@@ -395,7 +502,7 @@ ul {
 .belief-textarea {
   width: 100%;
   min-height: 5.875rem;
-  padding: 1rem 1rem 1.2rem 1rem;
+  padding: 1rem 1rem 2rem 1rem;
   background: var(--color-accent-2);
   color: var(--color-black);
   border: none;
@@ -414,8 +521,8 @@ ul {
 }
 
 .belief-textarea::placeholder {
-  color: var(--color-accent);
-  opacity: 0.5;
+  color: var(--color-black);
+  opacity: 0.35;
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   line-height: 1.875rem;
@@ -474,6 +581,31 @@ ul {
   cursor: not-allowed;
 }
 
+/* Small button — reusable compact pill */
+.btn-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid var(--color-black);
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--color-black);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-sm:not(:disabled):hover {
+  background: var(--color-gray-1);
+}
+
 /* Stake button styles defined in belief card section below */
 
 /* Hero / Compose Info */
@@ -517,7 +649,7 @@ ul {
 
 .progress-bar-fill {
   height: 100%;
-  background: var(--color-accent);
+  background: var(--color-black);
   transition: width 2s ease;
 }
 
@@ -539,39 +671,23 @@ ul {
   margin-top: 0;
 }
 
-@media (max-width: 48rem) {
-  .beliefs {
-    margin-top: 2rem;
-  }
-}
 
-/* Sort header */
-.sort-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  height: 2.625rem;
-}
-
-.sort-header .col-title {
-  margin-bottom: 0;
-  line-height: 2.625rem;
-}
-
+/* Sort controls — inline within the h2, vertically centered with the text */
 .sort-controls {
   position: relative;
   display: inline-flex;
-  height: 2.625rem;
   align-items: center;
+  vertical-align: middle;
+  margin-right: 0.35rem;
+  margin-bottom: 0.3rem;
 }
 
 .sort-trigger {
-  height: 2.625rem;
-  padding: 0 1rem;
+  height: 1.5rem;
+  padding: 0 0.5rem;
   background: transparent;
   border: 1px solid var(--color-black);
-  border-radius: 1.125rem;
+  border-radius: 0.75rem;
   color: var(--color-black);
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
@@ -580,7 +696,7 @@ ul {
   letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
   white-space: nowrap;
   pointer-events: none;
 }
@@ -600,120 +716,146 @@ ul {
 
 /* Belief Card */
 .belief-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+  width: 22rem;
+  overflow: visible;
 }
 
-/* Square belief card with auto-scaling text */
+.belief-card-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 2.5rem;
+}
+
+/* Card: original size (22rem square), fixed dimensions — never changes */
+.belief-card-square {
+  flex: 0 0 22rem;
+  width: 22rem;
+  height: 22rem;
+}
+
+/* Square belief card with auto-scaling text - fills fixed parent */
 .belief-square {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 100%;
   background: var(--color-black);
   color: var(--color-white);
-  cursor: pointer;
   overflow: hidden;
   padding: 2rem;
-}
-
-/* Fitty measures parentNode.clientWidth, so this wrapper
-   gives it the actual content width (square minus padding) */
-.belief-square-measure {
-  width: 100%;
-  height: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  box-sizing: border-box;
 }
 
 .belief-square-text {
   font-family: 'Times New Roman', Times, serif;
-  line-height: 1.15;
   text-align: left;
   display: block;
   width: 100%;
   max-width: 100%;
   overflow-wrap: anywhere;
-}
-
-.belief-details {
-  background: var(--color-accent-1);
-  border-left: 1px solid var(--color-black);
-  border-right: 1px solid var(--color-black);
-  border-bottom: 1px solid var(--color-black);
-  display: grid;
-  grid-template-rows: 0fr;
+  word-wrap: break-word;
   overflow: hidden;
-  transition: grid-template-rows 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.belief-details.open {
-  grid-template-rows: 1fr;
+/* Details panel: right of card on wide, below on narrow */
+.belief-details-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 11rem;
+  flex-shrink: 0;
 }
 
-.belief-details > div {
-  min-height: 0;
-  opacity: 0;
-  transition: opacity 250ms ease 100ms;
+/* Each row is a column by default (4 stacked lines) */
+.belief-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.belief-details.open > div {
-  opacity: 1;
-  transition: opacity 250ms ease 100ms;
-}
-
-.stakes-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 0;
-}
-
-.stakes-table tbody tr {
-  border-bottom: 1px solid var(--color-black);
-  height: 2.5rem;
-}
-
-.stakes-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-.stakes-table td {
-  padding: 0.25rem 0.5rem;
+.belief-detail-line {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
-  line-height: 1rem;
-  text-align: left;
-  vertical-align: middle;
-  border-right: 1px solid var(--color-black);
-  text-transform: uppercase;
-}
-
-.stakes-table td:last-child {
-  border-right: none;
-}
-
-.stakes-table .stake-amount {
-  white-space: nowrap;
-  width: 2.5rem;
-  min-width: 2.5rem;
-  max-width: 2.5rem;
-  text-align: center;
   font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  color: var(--color-black);
 }
 
-.stake-time {
+.belief-detail-line--right {
+  flex-shrink: 0;
+}
+
+.belief-detail-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.belief-detail-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-black);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: color 0.2s, text-decoration 0.2s;
+}
+
+.belief-detail-link:hover:not(:disabled) {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+.belief-detail-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.belief-stakes-list {
+  list-style: none;
+  margin: 0.5rem 0 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.belief-stake-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.belief-stake-row .stake-amount {
+  flex: 0 0 auto;
+  min-width: 2rem;
+}
+
+.belief-stake-row .stake-time {
   white-space: nowrap;
-  width: 1%;
 }
 
-.stake-address {
-  width: auto;
+.belief-stake-row .stake-address {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.stake-tx {
+.belief-stake-row .stake-tx {
   white-space: nowrap;
-  width: 1%;
-  text-align: right;
 }
 
 .created-link {
@@ -727,46 +869,13 @@ ul {
   text-decoration: underline;
 }
 
-.stake-tx a {
+.belief-stake-row .stake-tx a {
   color: var(--color-accent);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.stake-tx a:hover {
-  color: var(--color-accent-hover);
-  text-decoration: underline;
-}
-
-.belief-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 0.25rem;
-}
-
-.belief-amount {
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: normal;
-  color: var(--color-black);
-}
-
-.btn-stake {
-  background: none;
-  color: var(--color-black);
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.2s, text-decoration 0.2s;
-}
-
-.btn-stake:hover:not(:disabled) {
+.belief-stake-row .stake-tx a:hover {
   color: var(--color-accent-hover);
   text-decoration: underline;
 }
@@ -787,6 +896,42 @@ ul {
     max-height: 100px;
     opacity: 1;
     padding-top: 0.5rem;
+  }
+}
+
+/*
+  Card responsive: details bump below at stage 2.
+  MUST come after card base styles so cascade order wins.
+*/
+@media (max-width: 66rem) {
+  .belief-card-inner {
+    display: block;
+    width: 22rem;
+  }
+
+  .belief-card-square {
+    display: block;
+  }
+
+  .belief-details-panel {
+    display: flex;
+    width: 22rem;
+    margin-top: 0.5rem;
+  }
+
+  .belief-detail-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .belief-detail-line--right {
+    text-align: right;
+  }
+
+  .belief-detail-line--right .belief-detail-link {
+    text-align: right;
   }
 }
 

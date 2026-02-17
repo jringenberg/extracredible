@@ -5,7 +5,7 @@ import { Providers } from './providers';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Believeth',
+  title: 'Extracredible',
   description: 'Stake on beliefs',
   icons: {
     icon: {
