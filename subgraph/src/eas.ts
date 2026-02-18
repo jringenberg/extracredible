@@ -4,7 +4,7 @@ import { Belief } from "../generated/schema"
 import { BigInt, ethereum, log } from "@graphprotocol/graph-ts"
 
 // Your belief schema UID on Base Sepolia
-const BELIEF_SCHEMA_UID = "0x69bcd982f49a139ab468090c647465c104c637ddac748063b143bc2435de064f"
+const BELIEF_SCHEMA_UID = "0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6"
 
 export function handleAttested(event: AttestedEvent): void {
   // Only process attestations using our belief schema

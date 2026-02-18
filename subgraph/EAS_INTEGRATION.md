@@ -20,7 +20,7 @@ The subgraph now indexes both BeliefStake contract events AND EAS attestation ev
 #### `src/eas.ts`
 - New mapping file for EAS events
 - `handleAttested()`: Processes attestation creation events
-  - Filters for belief schema UID: `0x69bcd982f49a139ab468090c647465c104c637ddac748063b143bc2435de064f`
+  - Filters for belief schema UID: `0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6`
   - Calls `EAS.getAttestation()` to retrieve attestation data
   - Decodes ABI-encoded string using `ethereum.decode('(string)', data)`
   - Stores decoded text in `belief.beliefText`

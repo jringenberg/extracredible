@@ -46,7 +46,7 @@ Extracredible lets users stake $2 USDC on belief statements. Stakes are binary c
 - BeliefStake: 0xaff45F0Fc8AF91B9D3A317d550307Efe0FFb7956
 - NullYieldStrategy: 0xdAE47395B1BbE2Ab6b94D9FcFa1B1ebd88c14395
 - Treasury (Safe): 0x8386571713221cBD4D61CbB0a4794AbCF4647055
-- Schema UID: 0x69bcd982f49a139ab468090c647465c104c637ddac748063b143bc2435de064f
+- Schema UID: 0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6
 
 ## Testing
 

@@ -240,7 +240,7 @@ $2 stake is 10-20x larger than gas costs - gas not a barrier.
 
 **Deployed Contracts:**
 - EAS Registry: 0x4200000000000000000000000000000000000021
-- EAS Schema UID: 0x69bcd982f49a139ab468090c647465c104c637ddac748063b143bc2435de064f
+- EAS Schema UID: 0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6
 - MockUSDC: 0xA5c82FCFBe1274166D01B1f3cd9f69Eb79bd74E8
 - BeliefStake: 0xa37c9A89375134374a866EeD3E57EAF2789d9613
 

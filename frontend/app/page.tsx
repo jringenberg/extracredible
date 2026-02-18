@@ -652,7 +652,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               recipient:
                 '0x0000000000000000000000000000000000000000' as `0x${string}`,
               expirationTime: 0n,
-              revocable: true,
+              revocable: false,
               refUID:
                 '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
               data: encodedData,
