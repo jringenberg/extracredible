@@ -9,7 +9,9 @@ import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { publicClient } from '@/lib/client';
 import { getBeliefs, getBeliefStakes, getAccountStakes, getBelief } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
+import Link from 'next/link';
 import { AddressDisplay } from '@/components/AddressDisplay';
+import { useDisplayName } from '@/hooks/useDisplayName';
 import { BeliefCard } from '@/components/BeliefCard';
 import {
   CONTRACTS,
@@ -25,35 +27,60 @@ function truncateAddress(addr: string): string {
   return `${addr.slice(0, 6)}...`;
 }
 
-function formatTimeAgo(timestamp: string): string {
+/** Total time only (no "ago"). fullLabels: MINUTES/HOURS for creation; false = MIN/HR for compact (e.g. stake rows) */
+function formatTime(timestamp: string, fullLabels = false): string {
   const now = Date.now();
   const then = parseInt(timestamp) * 1000;
   const diff = now - then;
-  
+
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  
+
   if (minutes < 1) return 'just now';
-  if (minutes === 1) return '1 minute ago';
-  if (minutes < 60) return `${minutes} minutes ago`;
-  if (hours === 1) return '1 hour ago';
-  if (hours < 24) return `${hours} hours ago`;
-  if (days === 1) return '1 day ago';
-  if (days < 30) return `${days} days ago`;
-  
+  if (fullLabels) {
+    if (minutes === 1) return '1 MINUTE';
+    if (minutes < 60) return `${minutes} MINUTES`;
+    if (hours === 1) return '1 HOUR';
+    if (hours < 24) return `${hours} HOURS`;
+    if (days === 1) return '1 DAY';
+    if (days < 30) return `${days} DAYS`;
+    const months = Math.floor(days / 30);
+    if (months === 1) return '1 MONTH';
+    if (months < 12) return `${months} MONTHS`;
+    const years = Math.floor(days / 365);
+    if (years === 1) return '1 YEAR';
+    return `${years} YEARS`;
+  }
+  if (minutes === 1) return '1 MIN';
+  if (minutes < 60) return `${minutes} MIN`;
+  if (hours === 1) return '1 HR';
+  if (hours < 24) return `${hours} HR`;
+  if (days === 1) return '1 DAY';
+  if (days < 30) return `${days} DAYS`;
+
   const months = Math.floor(days / 30);
-  if (months === 1) return '1 month ago';
-  if (months < 12) return `${months} months ago`;
-  
+  if (months === 1) return '1 MONTH';
+  if (months < 12) return `${months} MONTHS`;
+
   const years = Math.floor(days / 365);
-  if (years === 1) return '1 year ago';
-  return `${years} years ago`;
+  if (years === 1) return '1 YEAR';
+  return `${years} YEARS`;
 }
 
 function formatTxHash(hash: string): string {
   if (!hash) return '';
   return `${hash.slice(0, 6)}...`;
+}
+
+/** Normalize tx hash: some wallets return 64 hex chars without 0x prefix */
+function normalizeTxHash(hash: string | undefined): `0x${string}` {
+  if (!hash || typeof hash !== 'string') throw new Error('No transaction hash received');
+  const raw = hash.startsWith('0x') ? hash.slice(2) : hash;
+  if (raw.length !== 64 || !/^[0-9a-fA-F]+$/.test(raw)) {
+    throw new Error(`Invalid transaction hash: ${hash} (length: ${hash.length})`);
+  }
+  return `0x${raw}` as `0x${string}`;
 }
 
 /** Convert raw viem/contract errors into short, user-friendly messages */
@@ -140,6 +167,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     transactionHash: string;
   }>>>({});
 
+  const filterAddress = sortOption === 'wallet' ? address ?? undefined : sortOption === 'account' ? filterValue : undefined;
+  const { ensName: filterEnsName } = useDisplayName(filterAddress);
+
   // Toggle faucet mode body class
   useEffect(() => {
     if (showFaucetModal) {
@@ -152,14 +182,6 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     };
   }, [showFaucetModal]);
 
-  // Auto-grow textarea as content changes
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-  }, [belief]);
 
 
 
@@ -436,14 +458,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Stake] Approve transaction hash:', approveTx, 'length:', approveTx.length);
-      
-      // Validate transaction hash
-      if (!approveTx || approveTx.length !== 66) {
-        throw new Error(`Invalid approve transaction hash received: ${approveTx} (length: ${approveTx?.length || 0})`);
-      }
-
-      await publicClient.waitForTransactionReceipt({ hash: approveTx });
+      const approveHash = normalizeTxHash(approveTx);
+      await publicClient.waitForTransactionReceipt({ hash: approveHash });
 
       // Step 2: Stake
       setProgress(66);
@@ -458,14 +474,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Stake] Transaction hash:', stakeTx, 'length:', stakeTx.length);
-      
-      // Validate transaction hash
-      if (!stakeTx || stakeTx.length !== 66) {
-        throw new Error(`Invalid transaction hash received: ${stakeTx} (length: ${stakeTx?.length || 0})`);
-      }
-
-      await publicClient.waitForTransactionReceipt({ hash: stakeTx });
+      const stakeHash = normalizeTxHash(stakeTx);
+      await publicClient.waitForTransactionReceipt({ hash: stakeHash });
 
       // Update user stakes state immediately so UI updates
       setUserStakes((prev) => ({ ...prev, [attestationUID]: true }));
@@ -540,18 +550,12 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Unstake] Transaction hash:', unstakeTx, 'length:', unstakeTx.length);
-      
-      // Validate transaction hash
-      if (!unstakeTx || unstakeTx.length !== 66) {
-        throw new Error(`Invalid transaction hash received: ${unstakeTx} (length: ${unstakeTx?.length || 0})`);
-      }
-
+      const unstakeHash = normalizeTxHash(unstakeTx);
       setProgress(75);
       setProgressMessage('Waiting for confirmation...');
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Let animation play
 
-      await publicClient.waitForTransactionReceipt({ hash: unstakeTx });
+      await publicClient.waitForTransactionReceipt({ hash: unstakeHash });
 
       // Update user stakes state immediately so UI updates
       setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
@@ -663,18 +667,12 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Create] Attest transaction hash:', attestTx, 'length:', attestTx.length);
-      
-      // Validate transaction hash
-      if (!attestTx || attestTx.length !== 66) {
-        throw new Error(`Invalid attest transaction hash received: ${attestTx} (length: ${attestTx?.length || 0})`);
-      }
-
       setProgress(20);
       setProgressMessage('Confirming attestation...');
 
+      const attestHash = normalizeTxHash(attestTx);
       const attestReceipt = await publicClient.waitForTransactionReceipt({
-        hash: attestTx,
+        hash: attestHash,
       });
 
       setProgress(30);
@@ -700,17 +698,11 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Create] Approve transaction hash:', approveTx, 'length:', approveTx.length);
-      
-      // Validate transaction hash
-      if (!approveTx || approveTx.length !== 66) {
-        throw new Error(`Invalid approve transaction hash received: ${approveTx} (length: ${approveTx?.length || 0})`);
-      }
-
       setProgress(50);
       setProgressMessage('Confirming approval...');
+      const approveHash = normalizeTxHash(approveTx);
       await publicClient.waitForTransactionReceipt({
-        hash: approveTx,
+        hash: approveHash,
         confirmations: 2,
       });
 
@@ -726,16 +718,10 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         chain: base,
       });
 
-      console.log('[Create+Stake] Stake transaction hash:', stakeTx, 'length:', stakeTx.length);
-      
-      // Validate transaction hash
-      if (!stakeTx || stakeTx.length !== 66) {
-        throw new Error(`Invalid stake transaction hash received: ${stakeTx} (length: ${stakeTx?.length || 0})`);
-      }
-
       setProgress(70);
       setProgressMessage('Confirming stake...');
-      await publicClient.waitForTransactionReceipt({ hash: stakeTx });
+      const createStakeHash = normalizeTxHash(stakeTx);
+      await publicClient.waitForTransactionReceipt({ hash: createStakeHash });
 
       // Poll subgraph for new belief
       setProgress(90);
@@ -804,96 +790,32 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
             <div className="page">
               <main className="main">
-              {showFaucetModal ? (
-                <section className="faucet-modal">
-                  <h1 className="headline">Free Fake<br />Money</h1>
-                  
-                  <p className="content">You need two things to test Extracredible on Base testnet: fake ETH and fake USDC.</p>
-                  
-                  <div className="faucet-section">
-                    <p className="content">Base Sepolia ETH pays for gas fees. You need about 0.0005 ETH per belief (three transactions: approve, attest, stake). This should be enough for about 10.</p>
-                    
-                    <button 
-                      className="btn btn-outline" 
-                      onClick={handleFaucetETH}
-                      disabled={faucetLoading === 'eth' || !!faucetTxHash.eth}
-                    >
-                      {faucetLoading === 'eth' 
-                        ? 'Sending...' 
-                        : faucetTxHash.eth 
-                        ? (
-                          <a 
-                            href={`https://basescan.org/tx/${faucetTxHash.eth}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ color: 'inherit', textDecoration: 'none' }}
-                          >
-                            TX: {faucetTxHash.eth.slice(0, 6)}...
-                          </a>
-                        )
-                        : 'GET 0.005 TESTNET ETH'
-                      }
-                    </button>
-                  </div>
-                  
-                  <div className="faucet-section">
-                    <p className="content">USDC is used for staking. Each belief costs $2. This is testnet money with no real value.</p>
-                    
-                    <button 
-                      className="btn btn-outline" 
-                      onClick={handleFaucetUSDC}
-                      disabled={faucetLoading === 'usdc' || !!faucetTxHash.usdc}
-                    >
-                      {faucetLoading === 'usdc' 
-                        ? 'Minting...' 
-                        : faucetTxHash.usdc 
-                        ? (
-                          <a 
-                            href={`https://basescan.org/tx/${faucetTxHash.usdc}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            style={{ color: 'inherit', textDecoration: 'none' }}
-                          >
-                            TX: {faucetTxHash.usdc.slice(0, 6)}...
-                          </a>
-                        )
-                        : 'GET 20 (FAKE) USDC'
-                      }
-                    </button>
-                  </div>
-                  
-                  <div className="faucet-section">
-                    <p className="content">
-                      To see this fake USDC in your wallet, add this custom token {contractAddressCopied ? '(Copied!)' : '(click to copy)'}:
-                      <br />
-                      <span className="contract-address" onClick={handleCopyContractAddress}>
-                        {CONTRACTS.USDC}
-                      </span>
-                    </p>
-                    <p className="content">In MetaMask: Assets → Import Tokens → Custom Token. Symbol: USDC, Decimals: 6</p>
-                  </div>
-                  
-                  {faucetStatus && (
-                    <p className="status">{faucetStatus}</p>
-                  )}
-                  
-                </section>
-              ) : (
                 <div className="two-col">
                 <div className="col-left">
                 <div className="col-left-fixed">
                   <h1 className="col-title">
                     Extracredible
-                    <button
-                      type="button"
-                      className="col-left-toggle"
-                      onClick={() => setLeftColOpen(prev => !prev)}
-                    >
-                      [{leftColOpen ? 'hide' : 'show'}]
-                    </button>
+                    {!showFaucetModal && (
+                      <button
+                        type="button"
+                        className="col-left-toggle"
+                        onClick={() => setLeftColOpen(prev => !prev)}
+                      >
+                        [{leftColOpen ? 'hide' : 'show'}]
+                      </button>
+                    )}
                   </h1>
-                <div className={`col-left-body${leftColOpen ? '' : ' collapsed'}`}>
-                {!isConnected ? (
+                <div className={`col-left-body${leftColOpen || showFaucetModal ? '' : ' collapsed'}`}>
+                {showFaucetModal ? (
+                <section className="hero hero-info-view">
+                  <p className="content">
+                    Built on Base using Ethereum Attestation Service for immutable belief records, The Graph for indexing, and Privy for wallet connectivity — money legos stitched together into a lightweight utility. Your deposit sits in a simple escrow contract (<a href={`https://basescan.org/address/${CONTRACTS.BELIEF_STAKE}`} target="_blank" rel="noopener noreferrer">view on Basescan</a>) and you can pull it out anytime.
+                  </p>
+                  <p className="content">
+                    As AI-generated content becomes indistinguishable from human expression, verified statements backed by real cost will become a basic layer of trust online. Extracredible is an early exploration of what that looks like — attach a real cost to a public statement, and suddenly it carries weight. Not because the money matters, but because the willingness to stake it does.
+                  </p>
+                </section>
+                ) : !isConnected ? (
                 <section className="hero">
                   <p className="content">
                     Staking money on a statement makes it more believable. Even $2 proves conviction. Anyone can say anything online, but a costly signal carries sincerity. $2 says you mean it.
@@ -904,15 +826,16 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       className="belief-textarea"
                       value={belief}
                       onChange={(e) => setBelief(e.target.value)}
-                      placeholder="State your claim, prediction, commitment, belief..."
+                      placeholder="State your claim, belief, prediction, commitment..."
                       maxLength={550}
                     />
                     <div className="char-counter">{belief.length}/550</div>
                   </div>
 
-                  <button 
-                    className="btn btn-primary btn-disabled-style" 
-                    onClick={() => openConnectModal()}
+                  <button
+                    type="button"
+                    className="btn-cta btn-cta--create"
+                    disabled
                   >
                     Attest and Stake $2
                   </button>
@@ -949,7 +872,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       setBelief(belief + paste.slice(0, remaining));
                     }
                   }}
-                  placeholder="State your claim, prediction, commitment, belief..."
+                  placeholder="State your claim, belief, prediction, commitment..."
                   maxLength={550}
                   disabled={loading}
                   rows={1}
@@ -959,7 +882,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn-cta btn-cta--create"
                 disabled={loading || !belief.trim()}
               >
                 Attest and Stake $2
@@ -983,14 +906,30 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         </div>
 
         <div className="col-right">
+          {!showFaucetModal && (
+          <>
           <div className="col-right-header">
               <h2 className="col-title">
                 <span className="sort-controls">
-                  <span className="sort-trigger" aria-hidden="true">
-                    <span>Sort</span>
-                    <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <span className="sort-trigger btn-cta btn-cta--sort" aria-hidden="true">
+                    <svg className="sort-filter-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <line x1="2" y1="4" x2="14" y2="4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      <line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+                      <line x1="6" y1="12" x2="10" y2="12" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                     </svg>
+                  </span>
+                  <span className="sort-label">
+                    {sortOption === 'popular' && 'Popular Beliefs'}
+                    {sortOption === 'recent' && 'Recent Beliefs'}
+                    {sortOption === 'wallet' && address && (
+                      filterEnsName ? filterEnsName : `WALLET ${truncateAddress(address)}`
+                    )}
+                    {sortOption === 'account' && filterValue && (
+                      filterEnsName ? filterEnsName : `WALLET ${truncateAddress(filterValue)}`
+                    )}
+                    {sortOption === 'belief' && filterValue && (
+                      `BELIEF ${truncateAddress(filterValue)}`
+                    )}
                   </span>
                   <select
                     id="belief-sort-select"
@@ -1013,11 +952,6 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                     )}
                   </select>
                 </span>
-                {sortOption === 'popular' && 'Popular Beliefs'}
-                {sortOption === 'recent' && 'Recent Beliefs'}
-                {sortOption === 'wallet' && address && `My Wallet (${truncateAddress(address)})`}
-                {sortOption === 'account' && filterValue && `Wallet (${truncateAddress(filterValue)})`}
-                {sortOption === 'belief' && filterValue && `Belief (${truncateAddress(filterValue)})`}
               </h2>
           </div>
         <section className="beliefs">
@@ -1045,7 +979,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                           <AddressDisplay address={beliefItem.attester as `0x${string}`} linkToAccount />
                         </span>
                         <span className="belief-detail-line belief-detail-line--right">
-                          {formatTimeAgo(beliefItem.createdAt)}
+                          {formatTime(beliefItem.createdAt, true)}
                         </span>
                       </div>
                       <div className="belief-detail-row">
@@ -1059,42 +993,25 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                           </button>
                           {isDetailsOpen && stakes.length > 0 && (
                             <ul className="belief-stakes-list">
-                              {stakes.map((stake, index) => {
-                                const isCreator = index === stakes.length - 1;
-                                const stakeDollars = Number(stake.amount) / 1_000_000;
-                                return (
-                                  <li key={index} className="belief-stake-row">
-                                    <span className="stake-amount">${Math.floor(stakeDollars)}</span>
-                                    <span className="stake-time">{formatTimeAgo(stake.timestamp)}</span>
-                                    <span className="stake-address">
-                                      <AddressDisplay address={stake.staker} />
-                                      {isCreator && (
-                                        <>
-                                          {' '}
-                                          <a
-                                            href={`https://base.easscan.org/attestation/view/${beliefItem.id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="created-link"
-                                          >
-                                            CREATED
-                                          </a>
-                                        </>
-                                      )}
-                                    </span>
-                                    <span className="stake-tx">
-                                      TX{' '}
-                                      <a
-                                        href={`https://basescan.org/tx/${stake.transactionHash}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        {formatTxHash(stake.transactionHash)}
-                                      </a>
-                                    </span>
-                                  </li>
-                                );
-                              })}
+                              {stakes.map((stake, index) => (
+                                <li key={index} className="belief-stake-row">
+                                  <span className="stake-prefix"> + </span>
+                                  <span className="stake-amount">$2</span>
+                                  <span className="stake-time">
+                                    <a
+                                      href={`https://basescan.org/tx/${stake.transactionHash}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="belief-detail-link"
+                                    >
+                                      {formatTime(stake.timestamp)}
+                                    </a>
+                                  </span>
+                                  <span className="stake-address">
+                                    <AddressDisplay address={stake.staker} linkToAccount />
+                                  </span>
+                                </li>
+                              ))}
                             </ul>
                           )}
                         </div>
@@ -1121,7 +1038,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                               }}
                               disabled={loading}
                             >
-                              Add $2
+                              ADD YOUR $2
                             </button>
                           )}
                         </span>
@@ -1140,9 +1057,10 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
           {!loading && status && <p className="status">{status}</p>}
         </section>
+          </>
+          )}
         </div>
         </div>
-      )}
       </main>
       </div>
     </>

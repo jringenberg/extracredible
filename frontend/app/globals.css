@@ -10,30 +10,4 @@ body {
   min-height: 100vh;
 }
 
-/* Connect Button Styling */
-.btn-connect {
-  padding: 10px 20px;
-  border: 1px solid var(--color-accent);
-  border-radius: 0;
-  background: white;
-  color: var(--color-accent);
-  cursor: pointer;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.05rem;
-  transition: all 0.2s;
-  position: relative;
-  z-index: 10;
-}
-
-.btn-connect:hover {
-  background: var(--color-accent);
-  color: white;
-}
-
-.btn-connect:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* CTA button styles live in styles.css (.btn-cta + modifiers) */

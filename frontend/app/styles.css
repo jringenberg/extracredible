@@ -33,6 +33,10 @@
   --color-text-primary: var(--color-black);
   --color-border: var(--color-black);
   --color-emergency: #ff4444; /* Red - emergency disconnect */
+
+  /* Yellow highlight: padding for more visible highlight; negative margin keeps typography unchanged */
+  --highlight-pad: 0.12em;
+  --highlight-pad-inline: 0.2em;
 }
 
 /* Dark mode (future) */
@@ -69,7 +73,7 @@ body {
   font-size: 1rem;
   line-height: 1.5;
   color: var(--color-text-primary);
-  background: var(--color-white);
+  background: #fdfdfd;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -89,11 +93,12 @@ a {
   color: var(--color-accent);
   text-decoration: none;
   transition: color 0.2s ease;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
 }
 
 a:hover {
-  color: var(--color-accent-hover);
-  text-decoration: underline;
+  background: #fef9c3;
 }
 
 /* Headlines */
@@ -294,10 +299,6 @@ ul {
   color: var(--color-black);
 }
 
-.col-left .btn {
-  border-color: var(--color-black);
-  color: var(--color-black);
-}
 
 /* Collapsed left col toggle — hidden on wide, shown at stage 3 */
 .col-left-toggle {
@@ -482,37 +483,34 @@ ul {
   margin-top: 1rem;
   margin-bottom: 1rem;
   display: flex;
-  flex-direction: column;
-  position: relative;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
 .char-counter {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+  flex-shrink: 0;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-gray-disabled);
-  z-index: 10;
 }
 
 .belief-textarea {
-  width: 100%;
-  min-height: 5.875rem;
+  width: 17rem;
+  height: 17rem;
   padding: 1rem 1rem 2rem 1rem;
   background: var(--color-accent-2);
   color: var(--color-black);
   border: none;
   resize: none;
   font-family: 'Times New Roman', Times, serif;
-  font-size: 1.5rem;
-  line-height: 1.875rem;
+  font-size: 1.2rem;
+  line-height: 1.8rem;
   cursor: text;
-  overflow-y: hidden;
-  field-sizing: content;
+  overflow-y: auto;
 }
 
 .belief-textarea:focus {
@@ -524,8 +522,8 @@ ul {
   color: var(--color-black);
   opacity: 0.35;
   font-family: 'Times New Roman', Times, serif;
-  font-size: 1.5rem;
-  line-height: 1.875rem;
+  font-size: 1.2rem;
+  line-height: 1.8rem;
 }
 
 .belief-textarea:disabled {
@@ -560,9 +558,10 @@ ul {
 }
 
 .btn-disabled-style {
-  opacity: 0.5;
   cursor: pointer;
   box-shadow: none !important;
+  color: hsl(0, 0%, 45%);
+  border-color: var(--color-gray-disabled);
 }
 
 .btn-outline {
@@ -611,13 +610,59 @@ ul {
 /* Hero / Compose Info */
 .hero-info,
 .compose-info {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
   font-family: 'Times New Roman', Times, serif;
   font-size: 1.5rem;
   line-height: 2.25rem;
 }
 
-/* Wallet Button */
+/* Main CTAs: create, sort, connect — shared base + modifiers */
+.btn-cta {
+  height: 2.625rem;
+  padding: 0 1rem;
+  border-radius: 1.125rem;
+  border: 1px solid var(--color-black);
+  background: transparent;
+  color: var(--color-black);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-cta:not(:disabled):hover {
+  background: var(--color-gray-1);
+}
+
+.btn-cta:disabled {
+  color: hsl(0, 0%, 45%);
+  border-color: var(--color-gray-disabled);
+  cursor: not-allowed;
+}
+
+.btn-cta--create {
+  width: 17rem;
+}
+
+.btn-cta--connect {
+  /* default padding 0 1rem */
+}
+
+.btn-cta--sort {
+  padding: 0 0.8rem;
+}
+
+/* Sort trigger is visual only; select overlays; hover on parent for feedback */
+.sort-controls:hover .sort-trigger.btn-cta {
+  background: var(--color-gray-1);
+}
 
 /* Status and Progress */
 .status {
@@ -677,28 +722,25 @@ ul {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: calc(0.5rem + 2px);
   vertical-align: middle;
-  margin-right: 0.35rem;
+  margin-right: 0.7rem;
   margin-bottom: 0.3rem;
+  cursor: pointer;
 }
 
-.sort-trigger {
-  height: 1.5rem;
-  padding: 0 0.5rem;
-  background: transparent;
-  border: 1px solid var(--color-black);
-  border-radius: 0.75rem;
-  color: var(--color-black);
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  white-space: nowrap;
+.sort-label {
   pointer-events: none;
+}
+
+/* Composes with .btn-cta .btn-cta--sort; trigger is visual only, select overlays */
+.sort-trigger {
+  pointer-events: none;
+}
+
+.sort-filter-icon {
+  width: 1em;
+  height: 1em;
 }
 
 .sort-native {
@@ -724,7 +766,7 @@ ul {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 2.5rem;
+  gap: 2rem;
 }
 
 /* Card: original size (22rem square), fixed dimensions — never changes */
@@ -748,6 +790,12 @@ ul {
   box-sizing: border-box;
 }
 
+@supports (color: color(display-p3 1 1 1)) {
+  .belief-square {
+    color: color(display-p3 1.15 1.15 1.15);
+  }
+}
+
 .belief-square-text {
   font-family: 'Times New Roman', Times, serif;
   text-align: left;
@@ -759,20 +807,20 @@ ul {
   overflow: hidden;
 }
 
-/* Details panel: right of card on wide, below on narrow */
+/* Details panel: one spacing token for all vertical rhythm */
 .belief-details-panel {
+  --detail-gap: 0.35rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--detail-gap);
   width: 11rem;
   flex-shrink: 0;
 }
 
-/* Each row is a column by default (4 stacked lines) */
 .belief-detail-row {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--detail-gap);
 }
 
 .belief-detail-line {
@@ -781,7 +829,7 @@ ul {
   font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  line-height: 1.3;
+  line-height: 1.4;
   color: var(--color-black);
 }
 
@@ -789,15 +837,20 @@ ul {
   flex-shrink: 0;
 }
 
+/* Block stacks "total staked" + stakes list with same gap as rest of panel */
 .belief-detail-block {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--detail-gap);
 }
 
 .belief-detail-link {
   background: none;
   border: none;
-  padding: 0;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   font-weight: normal;
@@ -807,12 +860,11 @@ ul {
   cursor: pointer;
   text-align: left;
   text-decoration: none;
-  transition: color 0.2s, text-decoration 0.2s;
+  transition: background 0.2s;
 }
 
 .belief-detail-link:hover:not(:disabled) {
-  color: var(--color-accent-hover);
-  text-decoration: underline;
+  background: #fef9c3;
 }
 
 .belief-detail-link:disabled {
@@ -822,62 +874,79 @@ ul {
 
 .belief-stakes-list {
   list-style: none;
-  margin: 0.5rem 0 0 0;
+  margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--detail-gap);
 }
 
 .belief-stake-row {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: baseline;
   gap: 0.5rem;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.belief-stake-row .stake-prefix {
+  flex: 0 0 auto;
+  padding-left: 0.25em;
+  color: var(--color-black);
 }
 
 .belief-stake-row .stake-amount {
   flex: 0 0 auto;
-  min-width: 2rem;
 }
 
 .belief-stake-row .stake-time {
-  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
+.belief-stake-row .stake-time a {
+  color: inherit;
+  text-decoration: none;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
+}
+
+.belief-stake-row .stake-time a:hover {
+  background: #fef9c3;
+}
+
+/* Wide: details to the right — don't crop address */
 .belief-stake-row .stake-address {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
-}
-
-.belief-stake-row .stake-tx {
-  white-space: nowrap;
 }
 
 .created-link {
   color: var(--color-accent);
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: background 0.2s ease;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
 }
 
 .created-link:hover {
-  color: var(--color-accent-hover);
-  text-decoration: underline;
+  background: #fef9c3;
 }
 
 .belief-stake-row .stake-tx a {
   color: var(--color-accent);
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: background 0.2s ease;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
 }
 
 .belief-stake-row .stake-tx a:hover {
-  color: var(--color-accent-hover);
-  text-decoration: underline;
+  background: #fef9c3;
 }
 
 .belief-progress {
@@ -933,33 +1002,40 @@ ul {
   .belief-detail-line--right .belief-detail-link {
     text-align: right;
   }
+
+  /* Below card: allow crop of long address */
+  .belief-stake-row .stake-address {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-/* Faucet Modal */
+/* $ info view: space between the two paragraphs */
+.hero-info-view .content + .content {
+  margin-top: 1.5rem;
+}
+
+/* $ info view (dark mode): white title and content in left col */
+body.faucet-active .col-left .col-title,
+body.faucet-active .col-left .content {
+  color: var(--color-white);
+}
+
+body.faucet-active .col-left .content a {
+  color: hsl(220, 100%, 80%);
+}
+
+body.faucet-active .col-left .content a:hover {
+  background: transparent;
+  color: var(--color-white);
+}
+
 body.faucet-active .dollar-button {
   background: var(--color-white);
   color: var(--color-black);
 }
 
-.btn-connect {
-  height: 2.625rem;
-  padding: 0 1rem;
-  background: transparent;
-  border: 1px solid var(--color-black);
-  border-radius: 1.125rem;
-  color: var(--color-black);
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 0.9rem;
-  font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-}
-
-body.faucet-active .btn-connect {
+body.faucet-active .btn-cta {
   color: var(--color-white) !important;
   border-color: var(--color-white) !important;
 }
@@ -1021,12 +1097,13 @@ body.faucet-active .status {
   color: var(--color-accent);
   text-decoration: none;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: background 0.2s ease;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
 }
 
 .disconnect-link:hover {
-  text-decoration: underline;
-  opacity: 0.8;
+  background: #fef9c3;
 }
 
 body.faucet-active .disconnect-link {
@@ -1168,11 +1245,13 @@ body.faucet-active .disconnect-link {
 .address-link {
   color: inherit;
   text-decoration: none;
-  border-bottom: 1px solid rgba(0,0,0,0.2);
+  transition: background 0.2s ease;
+  padding: var(--highlight-pad) var(--highlight-pad-inline);
+  margin: calc(-1 * var(--highlight-pad)) calc(-1 * var(--highlight-pad-inline));
 }
 
 .address-link:hover {
-  border-bottom-color: currentColor;
+  background: #fef9c3;
 }
 
 .belief-link {

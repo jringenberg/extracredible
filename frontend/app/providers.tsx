@@ -8,11 +8,12 @@ import { base, mainnet } from 'viem/chains';
 import { ReactNode } from 'react';
 import { BASE_RPC } from '@/lib/contracts';
 
+const mainnetRpc = process.env.NEXT_PUBLIC_MAINNET_RPC_URL ?? 'https://eth.llamarpc.com';
 const wagmiConfig = createConfig({
   chains: [base, mainnet],
   transports: {
     [base.id]: http(BASE_RPC),
-    [mainnet.id]: http(), // Public RPC for ENS lookups
+    [mainnet.id]: http(mainnetRpc), // ENS lookups
   },
 });
 
