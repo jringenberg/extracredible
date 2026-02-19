@@ -811,10 +811,10 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                 {showFaucetModal ? (
                 <section className="hero hero-info-view">
                   <p className="content">
-                    Built on Base using Ethereum Attestation Service for immutable belief records, The Graph for indexing, and Privy for wallet connectivity — money Legos stacked together into a lightweight utility. Your deposit sits in a simple escrow contract (<a href={`https://basescan.org/address/${CONTRACTS.BELIEF_STAKE}`} target="_blank" rel="noopener noreferrer">view on Basescan</a>) and you can pull it out anytime.
+                    Built on Base using Ethereum Attestation Service for immutable belief records, The Graph for indexing, and Privy for wallet connectivity. Money Legos stacked together into a lightweight utility. Your deposit sits in a simple escrow contract (<a href={`https://basescan.org/address/${CONTRACTS.BELIEF_STAKE}`} target="_blank" rel="noopener noreferrer">view on Basescan</a>) and you can pull it out anytime.
                   </p>
                   <p className="content">
-                    As AI-generated content becomes indistinguishable from human expression, verified statements backed by real cost signal (even just a little) additional credibility. Extracredible explores the simplest version of what that looks like — attach 2 USDC to a public statement and suddenly it carries weight. Not because the money matters, but because the willingness to stake it does.
+                    As AI-generated content becomes indistinguishable from human expression, verified statements backed by real cost signal (even just a little) additional credibility. Extracredible explores the simplest version of what that looks like: attach 2 USDC to a public statement and suddenly it carries weight. Not because the money matters, but because the willingness to stake it does.
                   </p>
                 </section>
                 ) : !isConnected ? (

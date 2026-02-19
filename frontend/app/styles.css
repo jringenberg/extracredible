@@ -256,7 +256,7 @@ ul {
   grid-column: 1;
   width: 22rem;
   justify-self: start;
-  margin-left: 5rem;
+  margin-left: 4.6rem;
   align-self: stretch;
   color: var(--color-black);
 }
@@ -757,7 +757,7 @@ ul {
 .beliefs-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 /* Belief Card */
@@ -770,7 +770,7 @@ ul {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  gap: 2rem;
+  gap: 1.6rem;
 }
 
 /* Card: original size (22rem square), fixed dimensions — never changes */
