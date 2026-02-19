@@ -10,7 +10,7 @@ import { publicClient } from '@/lib/client';
 import { getBeliefs, getBeliefStakes, getAccountStakes, getBelief } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
 import Link from 'next/link';
-import { AddressDisplay } from '@/components/AddressDisplay';
+import { AddressDisplay, AddressDisplayWhenVisible } from '@/components/AddressDisplay';
 import { useDisplayName } from '@/hooks/useDisplayName';
 import { BeliefCard } from '@/components/BeliefCard';
 import {
@@ -978,7 +978,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                     <div className="belief-details-panel">
                       <div className="belief-detail-row">
                         <span className="belief-detail-line">
-                          <AddressDisplay address={beliefItem.attester as `0x${string}`} linkToAccount />
+                          <AddressDisplayWhenVisible address={beliefItem.attester as `0x${string}`} linkToAccount />
                         </span>
                         <span className="belief-detail-line belief-detail-line--right">
                           {formatTime(beliefItem.createdAt, true)}

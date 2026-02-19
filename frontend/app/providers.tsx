@@ -9,6 +9,15 @@ import { ReactNode } from 'react';
 import { BASE_RPC } from '@/lib/contracts';
 
 const mainnetRpc = process.env.NEXT_PUBLIC_MAINNET_RPC_URL ?? 'https://eth.llamarpc.com';
+
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  const isFallback = !process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+  console.log(
+    '[ENS] Mainnet RPC:',
+    isFallback ? 'LlamaRPC (fallback). Add NEXT_PUBLIC_MAINNET_RPC_URL to frontend/.env.local for Alchemy.' : 'custom (env set)'
+  );
+}
+
 const wagmiConfig = createConfig({
   chains: [base, mainnet],
   transports: {
