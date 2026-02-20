@@ -811,7 +811,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                 {showFaucetModal ? (
                 <section className="hero hero-info-view">
                   <p className="content">
-                    Built on Base using Ethereum Attestation Service for immutable belief records, The Graph for indexing, and Privy for wallet connectivity. Money Legos stacked together into a lightweight utility. Your deposit sits in a simple escrow contract (<a href={`https://basescan.org/address/${CONTRACTS.BELIEF_STAKE}`} target="_blank" rel="noopener noreferrer">view on Basescan</a>) and you can pull it out anytime.
+                    Built on Base using Ethereum Attestation Service for immutable belief records, The Graph for indexing, and Privy for wallet connectivity. Money Legos stacked together into a lightweight utility. Your deposit sits in a simple escrow contract (view on <a href={`https://basescan.org/address/${CONTRACTS.BELIEF_STAKE}`} target="_blank" rel="noopener noreferrer">Basescan</a>) and you can pull it out anytime.
                   </p>
                   <p className="content">
                     As spam and slop become indistinguishable from human expression, verified statements backed by real cost (even just a little) signal additional (extra) credibility. Extracredible is the smallest, simplest, most narrow expression of that. Staking 2 USDC on a public statement gives it weight. 

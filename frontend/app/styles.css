@@ -906,12 +906,13 @@ body.faucet-active .col-left .content {
 }
 
 body.faucet-active .col-left .content a {
-  color: hsl(220, 100%, 80%);
+  color: var(--color-white);
+  text-decoration: underline;
 }
 
 body.faucet-active .col-left .content a:hover {
   background: transparent;
-  color: var(--color-white);
+  text-decoration: none;
 }
 
 body.faucet-active .dollar-button {
