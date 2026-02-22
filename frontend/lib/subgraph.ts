@@ -120,7 +120,7 @@ export async function getBeliefStakes(beliefId: string): Promise<Stake[]> {
 
   const query = `
     query GetBeliefStakes($beliefId: String!) {
-      stakes(where: { belief: $beliefId }, orderBy: stakedAt, orderDirection: desc) {
+      stakes(where: { belief: $beliefId }, orderBy: stakedAt, orderDirection: asc) {
         id
         staker
         amount
