@@ -320,8 +320,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
             console.log(
               '[checkUserStakes] uid:', belief.id,
-              '| v1 (', CONTRACTS.BELIEF_STAKE, '):', v1Amount.toString(),
-              '| v2 (', CONTRACTS.BELIEF_STAKE_V2, '):', v2Amount.toString(),
+              '| queried staker:', address,
+              '| v1:', v1Amount.toString(),
+              '| v2:', v2Amount.toString(),
             );
 
             return { id: belief.id, v1: v1Amount > 0n, v2: v2Amount > 0n };
