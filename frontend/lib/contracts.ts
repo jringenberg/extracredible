@@ -3,7 +3,10 @@ export const CONTRACTS = {
   BELIEF_SCHEMA_UID:
     '0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6',
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+  // V1 — kept for reading/displaying existing beliefs and staking on existing attestations
   BELIEF_STAKE: '0xaff45F0Fc8AF91B9D3A317d550307Efe0FFb7956',
+  // V2 router — used for new belief creation (attest + stake in one tx)
+  BELIEF_ROUTER: '0x202E585bAc1929105B068F021144Cc6D20036b5F',
 } as const;
 
 export const BASE_RPC = 'https://mainnet.base.org';
@@ -98,6 +101,17 @@ export const ERC20_ABI = [
     name: 'balanceOf',
     outputs: [{ name: '', type: 'uint256' }],
     stateMutability: 'view',
+    type: 'function',
+  },
+] as const;
+
+// BeliefRouter — single-tx belief creation for smart wallets
+export const BELIEF_ROUTER_ABI = [
+  {
+    inputs: [{ name: 'beliefText', type: 'string' }],
+    name: 'createAndStake',
+    outputs: [{ name: 'uid', type: 'bytes32' }],
+    stateMutability: 'nonpayable',
     type: 'function',
   },
 ] as const;

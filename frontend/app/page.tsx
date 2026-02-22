@@ -5,7 +5,6 @@ import { ConnectButton } from './ConnectButton';
 import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { base } from 'wagmi/chains';
-import { decodeAbiParameters, encodeAbiParameters } from 'viem';
 import { publicClient } from '@/lib/client';
 import { getBeliefs, getBeliefStakes, getAccountStakes, getBelief } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
@@ -15,7 +14,7 @@ import { useDisplayName } from '@/hooks/useDisplayName';
 import { BeliefCard } from '@/components/BeliefCard';
 import {
   CONTRACTS,
-  EAS_WRITE_ABI,
+  BELIEF_ROUTER_ABI,
   BELIEF_STAKE_ABI,
   BELIEF_STAKE_WRITE_ABI,
   ERC20_ABI,
@@ -639,68 +638,19 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         return;
       }
 
-      // Step 1: Create attestation
+      // Step 1: Approve USDC to BeliefRouter
       setProgress(10);
-      setProgressMessage('Creating attestation (TX 1 of 3)...');
-      const encodedData = encodeAbiParameters(
-        [{ name: 'belief', type: 'string' }],
-        [belief]
-      );
-
-      const attestTx = await walletClient.writeContract({
-        address: CONTRACTS.EAS_REGISTRY as `0x${string}`,
-        abi: EAS_WRITE_ABI,
-        functionName: 'attest',
-        args: [
-          {
-            schema: CONTRACTS.BELIEF_SCHEMA_UID as `0x${string}`,
-            data: {
-              recipient:
-                '0x0000000000000000000000000000000000000000' as `0x${string}`,
-              expirationTime: 0n,
-              revocable: false,
-              refUID:
-                '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`,
-              data: encodedData,
-              value: 0n,
-            },
-          },
-        ],
-        chain: base,
-      });
-
-      setProgress(20);
-      setProgressMessage('Confirming attestation...');
-
-      const attestHash = normalizeTxHash(attestTx);
-      const attestReceipt = await publicClient.waitForTransactionReceipt({
-        hash: attestHash,
-      });
-
-      setProgress(30);
-
-      // Parse attestation UID from the Attested event data
-      const attestedLog = attestReceipt.logs[0];
-      const decodedUid = decodeAbiParameters(
-        [{ name: 'uid', type: 'bytes32' }],
-        attestedLog.data as `0x${string}`
-      );
-      const attestationUID = decodedUid[0];
-      if (!attestationUID) throw new Error('Failed to get attestation UID');
-
-      // Step 2: Approve USDC
-      setProgress(40);
-      setProgressMessage('Approving USDC (TX 2 of 3)...');
+      setProgressMessage('Approving USDC (TX 1 of 2)...');
 
       const approveTx = await walletClient.writeContract({
         address: CONTRACTS.USDC as `0x${string}`,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [CONTRACTS.BELIEF_STAKE as `0x${string}`, STAKE_AMOUNT],
+        args: [CONTRACTS.BELIEF_ROUTER as `0x${string}`, STAKE_AMOUNT],
         chain: base,
       });
 
-      setProgress(50);
+      setProgress(25);
       setProgressMessage('Confirming approval...');
       const approveHash = normalizeTxHash(approveTx);
       await publicClient.waitForTransactionReceipt({
@@ -708,22 +658,29 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         confirmations: 2,
       });
 
-      // Step 3: Stake
-      setProgress(60);
-      setProgressMessage('Staking $2 (TX 3 of 3)...');
+      // Step 2: BeliefRouter.createAndStake — attest + stake in one transaction
+      setProgress(40);
+      setProgressMessage('Creating belief and staking $2 (TX 2 of 2)...');
 
-      const stakeTx = await walletClient.writeContract({
-        address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
-        abi: BELIEF_STAKE_WRITE_ABI,
-        functionName: 'stake',
-        args: [attestationUID],
+      const routerTx = await walletClient.writeContract({
+        address: CONTRACTS.BELIEF_ROUTER as `0x${string}`,
+        abi: BELIEF_ROUTER_ABI,
+        functionName: 'createAndStake',
+        args: [belief],
         chain: base,
       });
 
-      setProgress(70);
-      setProgressMessage('Confirming stake...');
-      const createStakeHash = normalizeTxHash(stakeTx);
-      await publicClient.waitForTransactionReceipt({ hash: createStakeHash });
+      setProgress(60);
+      setProgressMessage('Confirming...');
+      const routerHash = normalizeTxHash(routerTx);
+      const routerReceipt = await publicClient.waitForTransactionReceipt({ hash: routerHash });
+
+      // Extract attestation UID from the BeliefCreated event (attestationUID is topics[1])
+      const routerLog = routerReceipt.logs.find(
+        (log) => log.address.toLowerCase() === CONTRACTS.BELIEF_ROUTER.toLowerCase()
+      );
+      const attestationUID = routerLog?.topics[1] as `0x${string}` | undefined;
+      if (!attestationUID) throw new Error('Failed to get attestation UID from router');
 
       // Poll subgraph for new belief
       setProgress(90);
