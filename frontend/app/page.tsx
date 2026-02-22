@@ -77,14 +77,14 @@ function formatTxHash(hash: string): string {
   return `${hash.slice(0, 6)}...`;
 }
 
-/** Normalize tx hash: some wallets return 64 hex chars without 0x prefix */
+/** Normalize tx hash: some wallets strip a leading zero, returning 63 hex chars instead of 64 */
 function normalizeTxHash(hash: string | undefined): `0x${string}` {
   if (!hash || typeof hash !== 'string') throw new Error('No transaction hash received');
   const raw = hash.startsWith('0x') ? hash.slice(2) : hash;
-  if (raw.length !== 64 || !/^[0-9a-fA-F]+$/.test(raw)) {
+  if (raw.length === 0 || raw.length > 64 || !/^[0-9a-fA-F]+$/.test(raw)) {
     throw new Error(`Invalid transaction hash: ${hash} (length: ${hash.length})`);
   }
-  return `0x${raw}` as `0x${string}`;
+  return `0x${raw.padStart(64, '0')}` as `0x${string}`;
 }
 
 /** Convert raw viem/contract errors into short, user-friendly messages */
@@ -294,10 +294,11 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     async function checkUserStakes() {
       if (!address || beliefs.length === 0) return;
 
+      console.log('[checkUserStakes] connected address:', address);
       try {
         const stakeChecks = await Promise.all(
           beliefs.map(async (belief) => {
-            const getAmount = async (contractAddress: string) => {
+            const getAmount = async (contractAddress: string): Promise<bigint> => {
               try {
                 const result = await publicClient.readContract({
                   address: contractAddress as `0x${string}`,
@@ -306,7 +307,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                   args: [belief.id as `0x${string}`, address],
                 });
                 return (result as [bigint, bigint])[0];
-              } catch {
+              } catch (err) {
+                console.error('[checkUserStakes] getStake error on', contractAddress, 'for uid', belief.id, err);
                 return 0n;
               }
             };
@@ -315,6 +317,12 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               getAmount(CONTRACTS.BELIEF_STAKE),
               getAmount(CONTRACTS.BELIEF_STAKE_V2),
             ]);
+
+            console.log(
+              '[checkUserStakes] uid:', belief.id,
+              '| v1 (', CONTRACTS.BELIEF_STAKE, '):', v1Amount.toString(),
+              '| v2 (', CONTRACTS.BELIEF_STAKE_V2, '):', v2Amount.toString(),
+            );
 
             return { id: belief.id, v1: v1Amount > 0n, v2: v2Amount > 0n };
           })
