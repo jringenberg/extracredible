@@ -174,10 +174,10 @@ ul {
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4rem;
+  top: -2rem;
+  left: -1rem;
+  right: -1rem;
+  height: 6rem;
   background: #fdfdfd;
   z-index: 99;
   pointer-events: none;
