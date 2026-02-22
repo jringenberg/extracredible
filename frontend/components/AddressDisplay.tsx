@@ -2,12 +2,12 @@
 
 import { useEnsName, useEnsAvatar } from 'wagmi';
 import { mainnet, base } from 'wagmi/chains';
-import { Address, toCoinType } from 'viem';
+import { Address } from 'viem';
 import Link from 'next/link';
 import { useInView } from '@/hooks/useInView';
 
-/** ENSIP-19 coinType for Base mainnet — used to request the Base primary name via mainnet ENS */
-const BASE_COIN_TYPE = toCoinType(base.id);
+/** Base L2 Universal Resolver — required because the Base chain definition in viem has no ENS resolver */
+const BASE_L2_RESOLVER = '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD' as Address;
 
 /** 24h cache so we don't hammer mainnet RPC for repeated address lookups */
 const ENS_STALE_TIME_MS = 24 * 60 * 60 * 1000;
@@ -27,11 +27,11 @@ export function AddressDisplay({
   className = '',
   linkToAccount = false,
 }: AddressDisplayProps) {
-  // ENSIP-19: resolve Base primary name (basename) via mainnet ENS with coinType = toCoinType(base.id)
+  // Base name (e.g. you.base.eth) — resolved via Base chain L2 resolver
   const { data: basename } = useEnsName({
     address: address as Address,
-    chainId: mainnet.id,
-    coinType: BASE_COIN_TYPE,
+    chainId: base.id,
+    universalResolverAddress: BASE_L2_RESOLVER,
     query: { staleTime: ENS_STALE_TIME_MS },
   });
 
