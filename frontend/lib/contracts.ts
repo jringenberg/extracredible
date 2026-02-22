@@ -6,7 +6,7 @@ export const CONTRACTS = {
   // V1 — kept for reading/displaying existing beliefs and staking on existing attestations
   BELIEF_STAKE: '0xaff45F0Fc8AF91B9D3A317d550307Efe0FFb7956',
   // V2 router — used for new belief creation (attest + stake in one tx)
-  BELIEF_ROUTER: '0x202E585bAc1929105B068F021144Cc6D20036b5F',
+  BELIEF_ROUTER: '0xC4E2A0d57801c65bf4f2bc1ee5f516d3b52545f4',
 } as const;
 
 export const BASE_RPC = 'https://mainnet.base.org';

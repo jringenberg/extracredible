@@ -31,6 +31,29 @@ dataSources:
           handler: handleUnstaked
       file: ./src/belief-stake.ts
   - kind: ethereum
+    name: BeliefStakeV2
+    network: base
+    source:
+      address: "0x4A26D06EA005Bd18f38fBa19D06612566A98f502"
+      abi: BeliefStakeV2
+      startBlock: 42502122
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Staked
+        - Unstaked
+      abis:
+        - name: BeliefStakeV2
+          file: ./abis/BeliefStakeV2.json
+      eventHandlers:
+        - event: Staked(indexed bytes32,indexed address,uint256,uint256)
+          handler: handleStaked
+        - event: Unstaked(indexed bytes32,indexed address,uint256)
+          handler: handleUnstaked
+      file: ./src/belief-stake.ts
+  - kind: ethereum
     name: EAS
     network: base
     source:

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 // -------------------------------------------------------------------------
 
 struct AttestationRequestData {
-    address recipient;       // No recipient for beliefs
+    address recipient;       // Recipient = the user who created the belief
     uint64 expirationTime;  // 0 = no expiry
     bool revocable;         // false per your schema
     bytes32 refUID;         // 0 = no reference
@@ -101,7 +101,7 @@ contract BeliefRouter is ReentrancyGuard, Ownable {
             AttestationRequest({
                 schema: schemaUID,
                 data: AttestationRequestData({
-                    recipient: address(0),
+                    recipient: msg.sender,
                     expirationTime: 0,
                     revocable: false,
                     refUID: bytes32(0),
