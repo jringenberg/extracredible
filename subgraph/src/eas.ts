@@ -21,7 +21,7 @@ export function handleAttested(event: AttestedEvent): void {
     belief.stakerCount = 0
     belief.createdAt = event.block.timestamp
     belief.lastStakedAt = event.block.timestamp
-    belief.attester = event.params.attester
+    belief.attester = event.params.recipient
   }
   
   // Fetch the full attestation data from EAS contract
