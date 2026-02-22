@@ -666,7 +666,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         address: CONTRACTS.BELIEF_ROUTER as `0x${string}`,
         abi: BELIEF_ROUTER_ABI,
         functionName: 'createAndStake',
-        args: [belief],
+        args: [belief, address as `0x${string}`],
         chain: base,
       });
 
