@@ -6,7 +6,7 @@ export const CONTRACTS = {
   // V1 — kept for reading/displaying existing beliefs and staking on existing attestations
   BELIEF_STAKE: '0xaff45F0Fc8AF91B9D3A317d550307Efe0FFb7956',
   // V2 router — used for new belief creation (attest + stake in one tx)
-  BELIEF_ROUTER: '0xC4E2A0d57801c65bf4f2bc1ee5f516d3b52545f4',
+  BELIEF_ROUTER: '0xC0a19CBfD7b48a3E99DaC04bD63b7Cd81EB81466',
 } as const;
 
 export const BASE_RPC = 'https://mainnet.base.org';
@@ -108,7 +108,10 @@ export const ERC20_ABI = [
 // BeliefRouter — single-tx belief creation for smart wallets
 export const BELIEF_ROUTER_ABI = [
   {
-    inputs: [{ name: 'beliefText', type: 'string' }],
+    inputs: [
+      { name: 'beliefText', type: 'string' },
+      { name: 'author', type: 'address' },
+    ],
     name: 'createAndStake',
     outputs: [{ name: 'uid', type: 'bytes32' }],
     stateMutability: 'nonpayable',

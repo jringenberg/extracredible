@@ -78,19 +78,19 @@ contract BeliefRouterTest is Test {
     }
 
     // -------------------------------------------------------------------------
-    // createAndStake() — happy path
+    // createAndStake(beliefText, author) — happy path
     // -------------------------------------------------------------------------
 
     function test_createAndStake_atomicEASAndStake() public {
         string memory belief = "I believe the sky is blue";
 
         vm.prank(user1);
-        bytes32 uid = router.createAndStake(belief);
+        bytes32 uid = router.createAndStake(belief, user1);
 
         // UID must be non-zero
         assertNotEq(uid, bytes32(0));
 
-        // Stake recorded in V2
+        // Stake recorded in V2 under msg.sender (user1)
         (uint256 amount, uint256 ts) = stakeV2.getStake(uid, user1);
         assertEq(amount, STAKE_AMOUNT);
         assertGt(ts, 0);
@@ -103,7 +103,7 @@ contract BeliefRouterTest is Test {
 
     function test_createAndStake_stakeRecordedUnderUser_notRouter() public {
         vm.prank(user1);
-        bytes32 uid = router.createAndStake("solar panels on every roof");
+        bytes32 uid = router.createAndStake("solar panels on every roof", user1);
 
         // Stake under user1
         (uint256 userAmount,) = stakeV2.getStake(uid, user1);
@@ -118,9 +118,24 @@ contract BeliefRouterTest is Test {
         uint256 balanceBefore = usdc.balanceOf(user1);
 
         vm.prank(user1);
-        router.createAndStake("decentralized identity is inevitable");
+        router.createAndStake("decentralized identity is inevitable", user1);
 
         assertEq(usdc.balanceOf(user1), balanceBefore - STAKE_AMOUNT);
+    }
+
+    function test_createAndStake_authorCanDifferFromMsgSender() public {
+        // A smart wallet (user1) can designate a different author address.
+        address author = makeAddr("humanWallet");
+
+        vm.prank(user1);
+        bytes32 uid = router.createAndStake("author != msg.sender", author);
+
+        // Stake is under msg.sender (user1), not the author
+        (uint256 senderAmount,) = stakeV2.getStake(uid, user1);
+        assertEq(senderAmount, STAKE_AMOUNT);
+
+        (uint256 authorAmount,) = stakeV2.getStake(uid, author);
+        assertEq(authorAmount, 0);
     }
 
     function test_createAndStake_emitsBeliefCreated() public {
@@ -132,7 +147,7 @@ contract BeliefRouterTest is Test {
         vm.prank(user1);
         vm.expectEmit(true, true, false, true);
         emit BeliefCreated(expectedUID, user1, belief);
-        router.createAndStake(belief);
+        router.createAndStake(belief, user1);
     }
 
     function test_createAndStake_emitsStaked() public {
@@ -142,15 +157,15 @@ contract BeliefRouterTest is Test {
         vm.prank(user1);
         vm.expectEmit(true, true, false, true);
         emit Staked(expectedUID, user1, STAKE_AMOUNT, block.timestamp);
-        router.createAndStake(belief);
+        router.createAndStake(belief, user1);
     }
 
     function test_createAndStake_multipleUsers_differentUIDs() public {
         vm.prank(user1);
-        bytes32 uid1 = router.createAndStake("belief A");
+        bytes32 uid1 = router.createAndStake("belief A", user1);
 
         vm.prank(user2);
-        bytes32 uid2 = router.createAndStake("belief B");
+        bytes32 uid2 = router.createAndStake("belief B", user2);
 
         assertNotEq(uid1, uid2);
 
@@ -162,8 +177,8 @@ contract BeliefRouterTest is Test {
 
     function test_createAndStake_sameUser_differentBeliefs() public {
         vm.startPrank(user1);
-        bytes32 uid1 = router.createAndStake("belief one");
-        bytes32 uid2 = router.createAndStake("belief two");
+        bytes32 uid1 = router.createAndStake("belief one", user1);
+        bytes32 uid2 = router.createAndStake("belief two", user1);
         vm.stopPrank();
 
         (uint256 a1,) = stakeV2.getStake(uid1, user1);
@@ -180,7 +195,13 @@ contract BeliefRouterTest is Test {
     function test_createAndStake_revert_emptyBelief() public {
         vm.prank(user1);
         vm.expectRevert("BeliefRouter: empty belief");
-        router.createAndStake("");
+        router.createAndStake("", user1);
+    }
+
+    function test_createAndStake_revert_zeroAuthor() public {
+        vm.prank(user1);
+        vm.expectRevert("BeliefRouter: invalid author");
+        router.createAndStake("valid belief", address(0));
     }
 
     function test_createAndStake_revert_insufficientUsdc() public {
@@ -190,7 +211,7 @@ contract BeliefRouterTest is Test {
         vm.startPrank(broke);
         usdc.approve(address(router), type(uint256).max);
         vm.expectRevert();
-        router.createAndStake("I am broke");
+        router.createAndStake("I am broke", broke);
         vm.stopPrank();
     }
 
@@ -201,7 +222,7 @@ contract BeliefRouterTest is Test {
 
         vm.prank(noApproval);
         vm.expectRevert();
-        router.createAndStake("I forgot to approve");
+        router.createAndStake("I forgot to approve", noApproval);
     }
 
     // -------------------------------------------------------------------------
@@ -210,7 +231,7 @@ contract BeliefRouterTest is Test {
 
     function test_userCanUnstakeAfterCreateAndStake() public {
         vm.prank(user1);
-        bytes32 uid = router.createAndStake("I believe in the future");
+        bytes32 uid = router.createAndStake("I believe in the future", user1);
 
         uint256 balanceBefore = usdc.balanceOf(user1);
 

@@ -40,10 +40,11 @@ interface IBeliefStakeV2 {
  *
  *         Flow:
  *           1. User pre-approves $2 USDC to this router (one-time or per-tx)
- *           2. User calls createAndStake(beliefText) — one transaction
- *           3. Router pulls USDC, calls EAS.attest(), gets UID back
- *           4. Router transfers USDC to BeliefStakeV2, calls stakeFor(uid, user)
- *           5. Stake is recorded under user's address, not the router's
+ *           2. User calls createAndStake(beliefText, author) — one transaction
+ *           3. Router pulls USDC from msg.sender, calls EAS.attest() with
+ *              recipient = author (decouples smart-wallet sender from display address)
+ *           4. Router transfers USDC to BeliefStakeV2, calls stakeFor(uid, msg.sender)
+ *           5. Stake is recorded under msg.sender; EAS attribution goes to author
  *
  *         EOA users can keep using BeliefStakeV2.stake() directly (or V1).
  */
@@ -89,19 +90,23 @@ contract BeliefRouter is ReentrancyGuard, Ownable {
     /**
      * @notice Create a belief attestation and stake $2 in one transaction.
      * @param beliefText The belief statement to attest and stake on.
+     * @param author     Address to set as the EAS recipient (the human who authored
+     *                   the belief). Decouples smart-wallet msg.sender from the
+     *                   display address shown in EAS explorers and the subgraph.
      */
-    function createAndStake(string calldata beliefText) external nonReentrant returns (bytes32 uid) {
+    function createAndStake(string calldata beliefText, address author) external nonReentrant returns (bytes32 uid) {
         require(bytes(beliefText).length > 0, "BeliefRouter: empty belief");
+        require(author != address(0), "BeliefRouter: invalid author");
 
-        // 1. Pull USDC from user to this contract
+        // 1. Pull USDC from the calling wallet (msg.sender)
         usdc.safeTransferFrom(msg.sender, address(this), STAKE_AMOUNT);
 
-        // 2. Create EAS attestation — captures UID synchronously
+        // 2. Create EAS attestation with author as recipient
         uid = eas.attest(
             AttestationRequest({
                 schema: schemaUID,
                 data: AttestationRequestData({
-                    recipient: msg.sender,
+                    recipient: author,
                     expirationTime: 0,
                     revocable: false,
                     refUID: bytes32(0),
@@ -111,8 +116,7 @@ contract BeliefRouter is ReentrancyGuard, Ownable {
             })
         );
 
-        // 3. Stake on behalf of the actual user (USDC already in this contract,
-        //    BeliefStakeV2 will pull it via the pre-approved allowance)
+        // 3. Stake recorded under msg.sender (the wallet that paid)
         beliefStake.stakeFor(uid, msg.sender);
 
         emit BeliefCreated(uid, msg.sender, beliefText);
