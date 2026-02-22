@@ -6,8 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http } from 'wagmi';
 import { base, mainnet } from 'viem/chains';
 import { ReactNode } from 'react';
-import { BASE_RPC } from '@/lib/contracts';
 
+const baseRpc = process.env.NEXT_PUBLIC_ALCHEMY_RPC_URL ?? 'https://mainnet.base.org';
 const mainnetRpc = process.env.NEXT_PUBLIC_MAINNET_RPC_URL ?? 'https://eth.llamarpc.com';
 
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -21,7 +21,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 const wagmiConfig = createConfig({
   chains: [base, mainnet],
   transports: {
-    [base.id]: http(BASE_RPC),
+    [base.id]: http(baseRpc),
     [mainnet.id]: http(mainnetRpc), // ENS lookups
   },
 });
