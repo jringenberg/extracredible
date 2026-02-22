@@ -26,6 +26,11 @@ function truncateAddress(addr: string): string {
   return `${addr.slice(0, 6)}...`;
 }
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+function isZeroOrEmpty(addr: string | undefined): boolean {
+  return !addr || addr.toLowerCase() === ZERO_ADDRESS;
+}
+
 /** Total time only (no "ago"). fullLabels: MINUTES/HOURS for creation; false = MIN/HR for compact (e.g. stake rows) */
 function formatTime(timestamp: string, fullLabels = false): string {
   const now = Date.now();
@@ -218,6 +223,30 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               setBeliefs(prev => [...prev, singleBelief]);
             }
           }
+        }
+
+        // Eagerly fetch stakes for beliefs with a zero/missing attester so we can
+        // display the first staker as a fallback without waiting for detail open.
+        const zeroAttesterBeliefs = fetchedBeliefs.filter(b => isZeroOrEmpty(b.attester));
+        if (zeroAttesterBeliefs.length > 0) {
+          const stakeFetches = await Promise.all(
+            zeroAttesterBeliefs.map(async (b) => {
+              const stakes = await getBeliefStakes(b.id);
+              return {
+                id: b.id,
+                stakes: stakes.map(s => ({
+                  staker: s.staker,
+                  amount: s.amount,
+                  timestamp: s.stakedAt,
+                  transactionHash: s.transactionHash,
+                })),
+              };
+            })
+          );
+          setBeliefStakes(prev => ({
+            ...prev,
+            ...Object.fromEntries(stakeFetches.map(({ id, stakes }) => [id, stakes])),
+          }));
         }
       } catch (error) {
         console.error('Error fetching beliefs:', error);
@@ -941,6 +970,11 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               const isDetailsOpen = openBeliefDetails[beliefItem.id] || false;
               const stakes = beliefStakes[beliefItem.id] || [];
 
+              // If attester is zero/missing, fall back to the first staker
+              const displayAttester = isZeroOrEmpty(beliefItem.attester)
+                ? (stakes[0]?.staker ?? beliefItem.attester)
+                : beliefItem.attester;
+
               return (
                 <li key={beliefItem.id} className="belief-card">
                   <div className="belief-card-inner">
@@ -950,7 +984,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                     <div className="belief-details-panel">
                       <div className="belief-detail-row">
                         <span className="belief-detail-line">
-                          <AddressDisplayWhenVisible address={beliefItem.attester as `0x${string}`} linkToAccount />
+                          <AddressDisplayWhenVisible address={displayAttester as `0x${string}`} linkToAccount />
                         </span>
                         <span className="belief-detail-line belief-detail-line--right">
                           {formatTime(beliefItem.createdAt, true)}
