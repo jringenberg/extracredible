@@ -269,7 +269,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
       return BigInt(b.totalStaked || '0') > 0n;
     }
     if (sortOption === 'wallet' && address) {
-      return userStakes[b.id] === true;
+      return userStakes[b.id] === true || userStakeV2[b.id] === true;
     }
     if (sortOption === 'account' && filterValue) {
       return accountBeliefIds.has(b.id);
@@ -618,6 +618,17 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
       } else {
         setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
       }
+
+      // Optimistically decrement totalStaked in local state — TX is confirmed on-chain,
+      // no need to wait for the subgraph to reflect it before hiding the card.
+      setBeliefs((prev) =>
+        prev.map((b) => {
+          if (b.id !== attestationUID) return b;
+          const currentTotal = BigInt(b.totalStaked || '0');
+          const newTotal = currentTotal > STAKE_AMOUNT ? currentTotal - STAKE_AMOUNT : 0n;
+          return { ...b, totalStaked: newTotal.toString(), stakerCount: Math.max(0, b.stakerCount - 1) };
+        })
+      );
 
       // Poll subgraph until totalStaked actually drops for this belief
       setProgress(75);

@@ -32,7 +32,7 @@ export async function getBeliefs(): Promise<Belief[]> {
 
   const query = `
     query GetBeliefs {
-      beliefs(first: 100, orderBy: totalStaked, orderDirection: desc) {
+      beliefs(first: 100, where: { totalStaked_gt: "0" }, orderBy: totalStaked, orderDirection: desc) {
         id
         beliefText
         attester
