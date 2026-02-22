@@ -170,23 +170,6 @@ ul {
   letter-spacing: 0.08em;
 }
 
-/* Fixed nav bar backdrop — masks scrolling content behind buttons */
-body::before {
-  content: '';
-  position: fixed;
-  top: -2rem;
-  left: -1rem;
-  right: -1rem;
-  height: 6rem;
-  background: #fdfdfd;
-  z-index: 99;
-  pointer-events: none;
-}
-
-body.faucet-active::before {
-  background: var(--color-black);
-}
-
 /* Fixed nav buttons */
 .nav-fixed {
   position: fixed;
@@ -418,6 +401,23 @@ body.faucet-active::before {
     display: block;
     overflow: visible;
     padding: 0 0 1rem 0;
+  }
+
+  /* Backdrop masks scrolling content behind fixed nav buttons (mobile only) */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -2rem;
+    left: -1rem;
+    right: -1rem;
+    height: 6rem;
+    background: #fdfdfd;
+    z-index: 99;
+    pointer-events: none;
+  }
+
+  body.faucet-active::before {
+    background: var(--color-black);
   }
 }
 
