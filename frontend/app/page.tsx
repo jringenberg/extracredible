@@ -145,6 +145,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
   >([]);
   const [sortOption, setSortOption] = useState<SortOption>(initialSort);
   const [userStakes, setUserStakes] = useState<Record<string, boolean>>({});
+  const [userStakeV2, setUserStakeV2] = useState<Record<string, boolean>>({});
   const [loadingBeliefId, setLoadingBeliefId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showFaucetModal, setShowFaucetModal] = useState(false);
@@ -259,7 +260,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
   // beliefText now comes from subgraph - no need to fetch separately
 
-  // Check which beliefs the user has staked on
+  // Check which beliefs the user has staked on (V1 and V2 in parallel)
   useEffect(() => {
     async function checkUserStakes() {
       if (!address || beliefs.length === 0) return;
@@ -267,25 +268,32 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
       try {
         const stakeChecks = await Promise.all(
           beliefs.map(async (belief) => {
-            try {
-              const result = await publicClient.readContract({
-                address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
-                abi: BELIEF_STAKE_ABI,
-                functionName: 'getStake',
-                args: [belief.id as `0x${string}`, address],
-              });
-              
-              const [amount] = result as [bigint, bigint];
-              return [belief.id, amount > 0n] as const;
-            } catch {
-              // Expected for beliefs where user has no stake or contract returns no data
-              return [belief.id, false] as const;
-            }
+            const getAmount = async (contractAddress: string) => {
+              try {
+                const result = await publicClient.readContract({
+                  address: contractAddress as `0x${string}`,
+                  abi: BELIEF_STAKE_ABI,
+                  functionName: 'getStake',
+                  args: [belief.id as `0x${string}`, address],
+                });
+                return (result as [bigint, bigint])[0];
+              } catch {
+                return 0n;
+              }
+            };
+
+            const [v1Amount, v2Amount] = await Promise.all([
+              getAmount(CONTRACTS.BELIEF_STAKE),
+              getAmount(CONTRACTS.BELIEF_STAKE_V2),
+            ]);
+
+            return { id: belief.id, v1: v1Amount > 0n, v2: v2Amount > 0n };
           })
         );
 
-        // Merge with existing state instead of replacing to preserve optimistic updates
-        setUserStakes((prev) => ({ ...prev, ...Object.fromEntries(stakeChecks) }));
+        // Merge with existing state to preserve optimistic updates
+        setUserStakes((prev) => ({ ...prev, ...Object.fromEntries(stakeChecks.map((s) => [s.id, s.v1])) }));
+        setUserStakeV2((prev) => ({ ...prev, ...Object.fromEntries(stakeChecks.map((s) => [s.id, s.v2])) }));
       } catch (error) {
         console.error('Error checking user stakes:', error);
       }
@@ -526,8 +534,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
       return;
     }
     
-    // Prevent unstaking when no stake exists
-    if (!userStakes[attestationUID]) {
+    // Prevent unstaking when no stake exists in either contract
+    const isV2Stake = userStakeV2[attestationUID] || false;
+    if (!userStakes[attestationUID] && !isV2Stake) {
       setStatus('❌ You do not have an active stake on this belief');
       return;
     }
@@ -536,15 +545,17 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     setStatus('');
     setProgress(0);
     setProgressMessage('Unstaking...');
-    
+
     try {
       // Animate from 0% to 50% over 2s
       await new Promise((resolve) => setTimeout(resolve, 50)); // Small delay for render
       setProgress(50);
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Let animation complete
 
+      // Route to V2 (BeliefStakeV2) for router-created beliefs, V1 otherwise
+      const stakeContract = isV2Stake ? CONTRACTS.BELIEF_STAKE_V2 : CONTRACTS.BELIEF_STAKE;
       const unstakeTx = await walletClient.writeContract({
-        address: CONTRACTS.BELIEF_STAKE as `0x${string}`,
+        address: stakeContract as `0x${string}`,
         abi: BELIEF_STAKE_WRITE_ABI,
         functionName: 'unstake',
         args: [attestationUID as `0x${string}`],
@@ -558,8 +569,12 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
       await publicClient.waitForTransactionReceipt({ hash: unstakeHash });
 
-      // Update user stakes state immediately so UI updates
-      setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
+      // Clear the correct stake map immediately so UI updates
+      if (isV2Stake) {
+        setUserStakeV2((prev) => ({ ...prev, [attestationUID]: false }));
+      } else {
+        setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
+      }
 
       // Poll subgraph to wait for indexing
       setProgress(75);
@@ -919,7 +934,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               const totalStaked = BigInt(beliefItem.totalStaked || '0');
               const dollars = Number(totalStaked) / 1_000_000;
               const text = beliefItem.beliefText || '[No belief text]';
-              const hasStaked = userStakes[beliefItem.id] || false;
+              const hasStaked = userStakes[beliefItem.id] || userStakeV2[beliefItem.id] || false;
 
               const isLoading = loadingBeliefId === beliefItem.id;
 

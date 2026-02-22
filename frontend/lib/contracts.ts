@@ -5,6 +5,8 @@ export const CONTRACTS = {
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   // V1 — kept for reading/displaying existing beliefs and staking on existing attestations
   BELIEF_STAKE: '0xaff45F0Fc8AF91B9D3A317d550307Efe0FFb7956',
+  // V2 stake contract — holds stakes created via BeliefRouter
+  BELIEF_STAKE_V2: '0x4A26D06EA005Bd18f38fBa19D06612566A98f502',
   // V2 router — used for new belief creation (attest + stake in one tx)
   BELIEF_ROUTER: '0xC0a19CBfD7b48a3E99DaC04bD63b7Cd81EB81466',
 } as const;
