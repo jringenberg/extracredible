@@ -1,7 +1,7 @@
 import { Attested as AttestedEvent } from "../generated/EAS/EAS"
 import { EAS } from "../generated/EAS/EAS"
 import { Belief } from "../generated/schema"
-import { BigInt, ethereum, log } from "@graphprotocol/graph-ts"
+import { BigInt, Address, ethereum, log } from "@graphprotocol/graph-ts"
 
 // Your belief schema UID on Base Sepolia
 const BELIEF_SCHEMA_UID = "0x21f7fcf4af0c022d3e7316b6a5b9a04dcaedac59eaea803251e653abd1db9fd6"
@@ -21,7 +21,9 @@ export function handleAttested(event: AttestedEvent): void {
     belief.stakerCount = 0
     belief.createdAt = event.block.timestamp
     belief.lastStakedAt = event.block.timestamp
-    belief.attester = event.params.recipient
+    belief.attester = event.params.recipient.toHexString() == Address.zero().toHexString()
+      ? event.params.attester
+      : event.params.recipient
   }
   
   // Fetch the full attestation data from EAS contract
