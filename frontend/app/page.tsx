@@ -585,6 +585,11 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     setProgressMessage('Unstaking...');
 
     try {
+      // Snapshot totalStaked before the tx so we can detect when the subgraph catches up
+      const priorTotalStaked = BigInt(
+        beliefs.find((b) => b.id === attestationUID)?.totalStaked || '0'
+      );
+
       // Animate from 0% to 50% over 2s
       await new Promise((resolve) => setTimeout(resolve, 50)); // Small delay for render
       setProgress(50);
@@ -614,22 +619,35 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         setUserStakes((prev) => ({ ...prev, [attestationUID]: false }));
       }
 
-      // Poll subgraph to wait for indexing
+      // Poll subgraph until totalStaked actually drops for this belief
       setProgress(75);
       setProgressMessage('Refreshing to latest block...');
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Let animation play
 
-      const maxAttempts = 10;
+      const maxAttempts = 20;
+      let synced = false;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        const progressIncrement = (100 - 75) / maxAttempts;
-        setProgress(75 + progressIncrement * (attempt + 1));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setProgress(75 + (25 / maxAttempts) * (attempt + 1));
+
+        try {
+          const latestBeliefs = await getBeliefs();
+          const updated = latestBeliefs.find((b) => b.id === attestationUID);
+          if (BigInt(updated?.totalStaked || '0') < priorTotalStaked) {
+            setBeliefs(latestBeliefs);
+            setSortOption('recent');
+            synced = true;
+            break;
+          }
+        } catch {
+          // keep polling
+        }
       }
 
-      // Refresh beliefs and switch to Recent
-      const fetchedBeliefs = await getBeliefs();
-      setBeliefs(fetchedBeliefs);
-      setSortOption('recent');
+      if (!synced) {
+        const fetchedBeliefs = await getBeliefs();
+        setBeliefs(fetchedBeliefs);
+        setSortOption('recent');
+      }
 
       setProgress(100);
       setProgressMessage('Unstaked!');
