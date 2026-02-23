@@ -5,6 +5,7 @@ import { Providers } from './providers';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://extracredible.xyz'),
   title: 'Extracredible',
   description: 'Stake on beliefs',
   icons: {
