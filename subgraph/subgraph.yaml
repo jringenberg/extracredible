@@ -73,3 +73,23 @@ dataSources:
         - event: Attested(indexed address,indexed address,bytes32,indexed bytes32)
           handler: handleAttested
       file: ./src/eas.ts
+  - kind: ethereum
+    name: BeliefRouter
+    network: base
+    source:
+      address: "0xC0a19CBfD7b48a3E99DaC04bD63b7Cd81EB81466"
+      abi: BeliefRouter
+      startBlock: 42502122
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Belief
+      abis:
+        - name: BeliefRouter
+          file: ./abis/BeliefRouter.json
+      eventHandlers:
+        - event: BeliefCreated(indexed bytes32,indexed address,string)
+          handler: handleBeliefCreated
+      file: ./src/belief-router.ts

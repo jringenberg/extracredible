@@ -393,6 +393,18 @@ ul {
 
   .col-left-fixed {
     position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Compose: input and CTA fill column width on mobile */
+  .belief-textarea {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .btn-cta--create {
+    width: 100%;
   }
 
   .col-right-header {
@@ -621,6 +633,36 @@ ul {
   line-height: 1.2;
   text-align: left;
   color: var(--color-black);
+}
+
+/* Feed loading state — appears below sort header in column stack */
+.feed-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 4rem;
+  padding: 2rem 0;
+}
+
+.feed-loading-ellipsis {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--color-black);
+  opacity: 0.5;
+}
+
+.feed-loading-ellipsis span {
+  animation: feed-loading-dot 1.4s ease-in-out infinite both;
+}
+
+.feed-loading-ellipsis span:nth-child(1) { animation-delay: 0s; }
+.feed-loading-ellipsis span:nth-child(2) { animation-delay: 0.2s; }
+.feed-loading-ellipsis span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes feed-loading-dot {
+  0%, 60%, 100% { opacity: 0.25; }
+  30% { opacity: 1; }
 }
 
 /* Beliefs Section */

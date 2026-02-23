@@ -137,6 +137,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
   const [status, setStatus] = useState('');
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState('');
+  const [feedLoading, setFeedLoading] = useState(true);
   const [beliefs, setBeliefs] = useState<
     Array<{
       id: string;
@@ -195,6 +196,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
   const [accountBeliefIds, setAccountBeliefIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    setFeedLoading(true);
     async function fetchBeliefs() {
       try {
         const fetchedBeliefs = await getBeliefs();
@@ -251,6 +253,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         }
       } catch (error) {
         console.error('Error fetching beliefs:', error);
+      } finally {
+        setFeedLoading(false);
       }
     }
 
@@ -1025,6 +1029,13 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                 </span>
               </h2>
           </div>
+        {feedLoading ? (
+          <div className="feed-loading" aria-live="polite" aria-busy="true">
+            <span className="feed-loading-ellipsis" aria-hidden="true">
+              <span>.</span><span>.</span><span>.</span>
+            </span>
+          </div>
+        ) : (
         <section className="beliefs">
           <ul className="beliefs-list">
             {displayedBeliefs.map((beliefItem) => {
@@ -1133,6 +1144,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
           {!loading && status && <p className="status">{status}</p>}
         </section>
+        )}
           </div>
           )}
         </div>
