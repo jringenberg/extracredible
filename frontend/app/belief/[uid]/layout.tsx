@@ -18,7 +18,8 @@ export async function generateMetadata({
     : 'Belief';
   const description = 'Stake $2 on this belief — Extracredible';
   const baseUrl = 'https://extracredible.xyz';
-  const imageUrl = `${baseUrl}/api/og/belief/${encodeURIComponent(uid)}`;
+  const ogImageVersion = 3;
+  const imageUrl = `${baseUrl}/api/og/belief/${encodeURIComponent(uid)}?v=${ogImageVersion}`;
 
   return {
     title: `${title} — Extracredible`,
@@ -27,7 +28,7 @@ export async function generateMetadata({
       title: `${title} — Extracredible`,
       description,
       type: 'website',
-      images: [{ url: imageUrl, width: 1200, height: 1200, alt: title }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',

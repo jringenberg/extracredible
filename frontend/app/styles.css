@@ -398,6 +398,15 @@ ul {
   }
 
   /* Compose: input and CTA full width of column on mobile only */
+  .compose form,
+  .hero {
+    width: 100%;
+  }
+
+  .compose-input {
+    width: 100%;
+  }
+
   .belief-textarea {
     flex: 1 1 0;
     min-width: 0;
@@ -405,6 +414,7 @@ ul {
 
   .btn-cta--create {
     width: 100%;
+    display: block;
   }
 
   .col-right-header {
