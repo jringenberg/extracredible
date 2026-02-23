@@ -4,6 +4,10 @@ import { getBelief } from '@/lib/subgraph';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+const OG_WIDTH = 1200;
+const OG_HEIGHT = 628;
+const CARD_SIZE = 628;
+
 function getTextStyle(charCount: number): { fontSize: number; lineHeight: number } {
   if (charCount === 0) return { fontSize: 82, lineHeight: 1.25 };
   if (charCount < 30) return { fontSize: 231, lineHeight: 1.05 };
@@ -24,34 +28,47 @@ export async function GET(
   const { uid } = await params;
   const belief = await getBelief(uid);
   const text = belief?.beliefText?.trim() || 'Belief';
-  const { fontSize, lineHeight } = getTextStyle(text.length);
+  const { fontSize: rawFontSize, lineHeight } = getTextStyle(text.length);
+  const scale = (CARD_SIZE - 84) / (1200 - 160);
+  const fontSize = Math.round(rawFontSize * scale);
 
   const response = new ImageResponse(
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
+          width: OG_WIDTH,
+          height: OG_HEIGHT,
           display: 'flex',
-          alignItems: 'flex-start',
+          alignItems: 'center',
           justifyContent: 'flex-start',
-          background: '#000',
-          color: '#fff',
-          padding: 80,
-          fontFamily: 'Times New Roman, serif',
-          fontSize,
-          lineHeight,
-          textAlign: 'left',
-          overflow: 'hidden',
-          wordBreak: 'break-word',
+          background: '#fff',
         }}
       >
-        {text}
+        <div
+          style={{
+            width: CARD_SIZE,
+            height: CARD_SIZE,
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            background: '#000',
+            color: '#fff',
+            padding: 42,
+            fontFamily: 'Times New Roman, serif',
+            fontSize,
+            lineHeight,
+            textAlign: 'left',
+            overflow: 'hidden',
+            wordBreak: 'break-word',
+          }}
+        >
+          {text}
+        </div>
       </div>
     ),
     {
-      width: 1200,
-      height: 1200,
+      width: OG_WIDTH,
+      height: OG_HEIGHT,
       headers: {
         'Cache-Control': 'public, max-age=3600, s-maxage=3600',
         'Content-Type': 'image/png',
