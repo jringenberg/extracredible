@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ConnectButton } from './ConnectButton';
-import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
+import { useAccount, useWalletClient, useSwitchChain, useSendCalls, useCapabilities, useConfig, useConnection } from 'wagmi';
+import { waitForCallsStatus } from 'wagmi/actions';
 import { usePrivy } from '@privy-io/react-auth';
 import { base } from 'wagmi/chains';
+import { encodeFunctionData } from 'viem';
 import { publicClient } from '@/lib/client';
 import { getBeliefs, getBeliefStakes, getAccountStakes, getBelief } from '@/lib/subgraph';
 import { ProgressBar } from './ProgressBar';
@@ -124,6 +126,10 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
   const { data: walletClient } = useWalletClient({ chainId: base.id });
   const { switchChain } = useSwitchChain();
   const { login: openConnectModal } = usePrivy();
+  const config = useConfig();
+  const { connector } = useConnection();
+  const { data: capabilitiesData } = useCapabilities({ account: address, chainId: base.id });
+  const { sendCallsAsync } = useSendCalls();
 
   // Auto-switch to Base when connected on wrong chain
   useEffect(() => {
@@ -782,7 +788,98 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         return;
       }
 
-      // Step 1: Approve USDC to BeliefRouter
+      // EIP-5792 batched path for smart wallets (atomicBatch supported)
+      const chainCaps =
+        capabilitiesData &&
+        typeof capabilitiesData === 'object' &&
+        base.id in (capabilitiesData as object)
+          ? (capabilitiesData as Record<number, { atomicBatch?: { supported?: boolean } }>)[base.id]
+          : (capabilitiesData as { atomicBatch?: { supported?: boolean } } | undefined);
+      const useBatch = chainCaps?.atomicBatch?.supported === true;
+
+      if (useBatch) {
+        setProgress(10);
+        setProgressMessage('Approving and creating belief...');
+        const approveData = encodeFunctionData({
+          abi: ERC20_ABI,
+          functionName: 'approve',
+          args: [CONTRACTS.BELIEF_ROUTER as `0x${string}`, STAKE_AMOUNT],
+        });
+        const createAndStakeData = encodeFunctionData({
+          abi: BELIEF_ROUTER_ABI,
+          functionName: 'createAndStake',
+          args: [belief, address as `0x${string}`],
+        });
+        const { id } = await sendCallsAsync({
+          calls: [
+            { to: CONTRACTS.USDC as `0x${string}`, data: approveData },
+            { to: CONTRACTS.BELIEF_ROUTER as `0x${string}`, data: createAndStakeData },
+          ],
+          chainId: base.id,
+        });
+        setProgress(40);
+        setProgressMessage('Confirming...');
+        const statusResult = await waitForCallsStatus(config, {
+          id,
+          connector: connector ?? undefined,
+        });
+        console.log('[EIP-5792 batch] waitForCallsStatus result:', statusResult);
+        const receipts = statusResult.receipts ?? [];
+        const routerReceipt = receipts.find((r) =>
+          r.logs?.some(
+            (l) =>
+              (l as { address?: string }).address?.toLowerCase() ===
+              CONTRACTS.BELIEF_ROUTER.toLowerCase()
+          )
+        );
+        const routerLog = routerReceipt?.logs?.find(
+          (l) =>
+            (l as { address?: string }).address?.toLowerCase() ===
+            CONTRACTS.BELIEF_ROUTER.toLowerCase()
+        );
+        const attestationUID = (routerLog as { topics?: string[] })?.topics?.[1] as
+          | `0x${string}`
+          | undefined;
+        if (!attestationUID) throw new Error('Failed to get attestation UID from batch');
+        setProgress(90);
+        setProgressMessage('Refreshing to latest block...');
+        setBelief('');
+        const maxAttempts = 20;
+        let attempts = 0;
+        let found = false;
+        while (attempts < maxAttempts && !found) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          try {
+            const latestBeliefs = await getBeliefs();
+            found = latestBeliefs.some(
+              (b) => b.id === attestationUID && BigInt(b.totalStaked || '0') > 0n
+            );
+            if (found) {
+              setProgress(100);
+              setProgressMessage('Belief created!');
+              lastTxTime.current = Date.now();
+              setBeliefs(latestBeliefs);
+              setSortOption('recent');
+              setTimeout(() => {
+                setProgress(0);
+                setProgressMessage('');
+              }, 2000);
+              break;
+            }
+          } catch (e) {
+            console.error('Error polling subgraph:', e);
+          }
+          attempts++;
+          setProgress(90 + ((99 - 90) / maxAttempts) * attempts);
+        }
+        if (!found) {
+          setProgress(99);
+          setProgressMessage('Almost there - refresh to see your belief');
+        }
+        return;
+      }
+
+      // Step 1: Approve USDC to BeliefRouter (two-step flow)
       setProgress(10);
       setProgressMessage('Approving USDC (TX 1 of 2)...');
 
