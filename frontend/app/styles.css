@@ -13,8 +13,8 @@
   --color-gray-2: hsl(0, 0%, 95%);
   --color-gray-disabled: hsl(0, 0%, 79%);
 
-  /* Accent Blue — Klein Blue */
-  --color-accent: hsl(223, 100%, 33%);
+  /* Accent Blue — Klein Blue, slightly brighter for button hover */
+  --color-accent: hsl(223, 100%, 42%);
 
   /* Accent Yellow — warm highlight scale (higher = more saturated) */
   --yellow-30: #ffffe0;  /* Lightest: button hover */
@@ -397,7 +397,7 @@ ul {
     overflow: visible;
   }
 
-  /* Compose: input and CTA fill column width on mobile */
+  /* Compose: input and CTA full width of column on mobile only */
   .belief-textarea {
     flex: 1 1 0;
     min-width: 0;
@@ -559,11 +559,14 @@ ul {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, opacity 0.2s;
 }
 
 .btn-cta:not(:disabled):hover {
-  background: var(--yellow-30);
+  background: transparent;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 70px -25px hsl(223 100% 42% / 0.08);
 }
 
 .btn-cta:disabled {
@@ -584,9 +587,21 @@ ul {
   padding: 0 0.8rem;
 }
 
+.btn-cta--share {
+  width: 100%;
+  margin-top: 1rem;
+}
+
 /* Sort trigger is visual only; select overlays; hover on parent for feedback */
 .sort-controls:hover .sort-trigger.btn-cta {
-  background: var(--yellow-30);
+  background: transparent;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 70px -25px hsl(223 100% 42% / 0.08);
+}
+
+.sort-controls:hover .sort-label {
+  color: var(--color-accent);
 }
 
 /* Status and Progress */
@@ -768,7 +783,8 @@ ul {
   display: flex;
   flex-direction: column;
   gap: var(--detail-gap);
-  width: 11rem;
+  width: 22rem;
+  min-width: 22rem;
   flex-shrink: 0;
 }
 
@@ -796,9 +812,15 @@ ul {
 .belief-detail-block {
   flex: 1;
   min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--detail-gap);
+}
+
+.belief-detail-block > .belief-detail-link {
+  display: inline-block;
+  align-self: flex-start;
 }
 
 .belief-detail-link {
@@ -834,6 +856,8 @@ ul {
   display: flex;
   flex-direction: column;
   gap: var(--detail-gap);
+  width: 100%;
+  min-width: 0;
 }
 
 .belief-stake-row {
@@ -890,6 +914,18 @@ ul {
 
 .belief-stake-row .stake-tx a:hover {
   background: var(--yellow-90);
+}
+
+.belief-detail-row--attestation .belief-detail-link {
+  display: inline-block;
+  align-self: flex-start;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .belief-progress {
@@ -1101,10 +1137,12 @@ body.faucet-active .btn-cta {
   color: inherit;
   text-decoration: none;
   display: block;
+  padding: 0;
+  margin: 0;
 }
 
-.belief-link:hover .belief-square {
-  opacity: 0.7;
+.belief-link:hover {
+  background: transparent;
 }
 
 /* Belief meta on account page */

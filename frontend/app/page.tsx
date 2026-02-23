@@ -174,6 +174,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     transactionHash: string;
   }>>>({});
 
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
+
   const filterAddress = sortOption === 'wallet' ? address ?? undefined : sortOption === 'account' ? filterValue : undefined;
   const { ensName: filterEnsName } = useDisplayName(filterAddress);
 
@@ -277,6 +279,27 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
       setSortOption('popular');
     }
   }, [isConnected, sortOption]);
+
+  // On single-belief view: force details open and eagerly fetch stakes
+  useEffect(() => {
+    if (sortOption !== 'belief' || !filterValue) return;
+    setOpenBeliefDetails((prev) => ({ ...prev, [filterValue]: true }));
+    if (!beliefStakes[filterValue]) {
+      getBeliefStakes(filterValue)
+        .then((stakes) =>
+          setBeliefStakes((prev) => ({
+            ...prev,
+            [filterValue]: stakes.map((s) => ({
+              staker: s.staker,
+              amount: s.amount,
+              timestamp: s.stakedAt,
+              transactionHash: s.transactionHash,
+            })),
+          }))
+        )
+        .catch(console.error);
+    }
+  }, [sortOption, filterValue]);
 
   // Filter and sort beliefs based on selected option
   const displayedBeliefs = beliefs.filter((b) => {
@@ -432,6 +455,12 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
     setTimeout(() => setContractAddressCopied(false), 2000);
   }
 
+  function handleCopyShareLink() {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    navigator.clipboard.writeText(url);
+    setShareLinkCopied(true);
+    setTimeout(() => setShareLinkCopied(false), 2000);
+  }
 
   async function toggleBeliefDetails(beliefId: string) {
     const isCurrentlyOpen = openBeliefDetails[beliefId];
@@ -901,7 +930,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       className="belief-textarea"
                       value={belief}
                       onChange={(e) => setBelief(e.target.value)}
-                      placeholder="State your claim, belief, prediction, commitment..."
+                      placeholder="Say..."
                       maxLength={550}
                     />
                     {belief.length > 0 && <div className="char-counter">{belief.length}/550</div>}
@@ -947,7 +976,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       setBelief(belief + paste.slice(0, remaining));
                     }
                   }}
-                  placeholder="State your claim, belief, prediction, commitment..."
+                  placeholder="Say..."
                   maxLength={550}
                   disabled={loading}
                   rows={1}
@@ -1003,7 +1032,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       filterEnsName ? filterEnsName : `WALLET ${truncateAddress(filterValue)}`
                     )}
                     {sortOption === 'belief' && filterValue && (
-                      `BELIEF ${truncateAddress(filterValue)}`
+                      `BELIEF ${truncateAddress(filterValue).toLowerCase()}`
                     )}
                   </span>
                   <select
@@ -1023,7 +1052,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                       <option value="account">Wallet ({truncateAddress(filterValue)})</option>
                     )}
                     {sortOption === 'belief' && filterValue && (
-                      <option value="belief">Belief ({truncateAddress(filterValue)})</option>
+                      <option value="belief">BELIEF {truncateAddress(filterValue).toLowerCase()}</option>
                     )}
                   </select>
                 </span>
@@ -1057,9 +1086,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               return (
                 <li key={beliefItem.id} className="belief-card">
                   <div className="belief-card-inner">
-                    <div className="belief-card-square">
+                    <Link href={`/belief/${beliefItem.id}`} className="belief-card-square belief-link">
                       <BeliefCard text={text} />
-                    </div>
+                    </Link>
                     <div className="belief-details-panel">
                       <div className="belief-detail-row">
                         <span className="belief-detail-line">
@@ -1068,6 +1097,16 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                         <span className="belief-detail-line belief-detail-line--right">
                           {formatTime(beliefItem.createdAt, true)}
                         </span>
+                      </div>
+                      <div className="belief-detail-row belief-detail-row--attestation">
+                        <a
+                          href={`https://base.easscan.org/attestation/view/${beliefItem.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="belief-detail-link"
+                        >
+                          attestation {truncateAddress(beliefItem.id).toLowerCase()}
+                        </a>
                       </div>
                       <div className="belief-detail-row">
                         <div className="belief-detail-block">
@@ -1078,9 +1117,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                           >
                             ${Math.floor(dollars)} total staked
                           </button>
-                          {isDetailsOpen && stakes.length > 0 && (
+                          {isDetailsOpen && (
                             <ul className="belief-stakes-list">
-                              {stakes.map((stake, index) => (
+                              {[...stakes].reverse().map((stake, index) => (
                                 <li key={index} className="belief-stake-row">
                                   <span className="stake-prefix"> + </span>
                                   <span className="stake-amount">$2</span>
@@ -1141,6 +1180,18 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
               );
             })}
           </ul>
+
+          {sortOption === 'belief' && filterValue && (
+            <div className="belief-share-cta">
+              <button
+                type="button"
+                className="btn-cta btn-cta--share"
+                onClick={handleCopyShareLink}
+              >
+                {shareLinkCopied ? 'Copied!' : 'Copy link to share'}
+              </button>
+            </div>
+          )}
 
           {!loading && status && <p className="status">{status}</p>}
         </section>
