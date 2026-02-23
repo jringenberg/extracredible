@@ -1,9 +1,8 @@
 import { ImageResponse } from 'next/og';
 import { getBelief } from '@/lib/subgraph';
 
-export const alt = 'Belief';
-export const size = { width: 1200, height: 1200 };
-export const contentType = 'image/png';
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 function getTextStyle(charCount: number): { fontSize: number; lineHeight: number } {
   if (charCount === 0) return { fontSize: 82, lineHeight: 1.25 };
@@ -18,17 +17,16 @@ function getTextStyle(charCount: number): { fontSize: number; lineHeight: number
   return { fontSize: 54, lineHeight: 1.4 };
 }
 
-export default async function Image({
-  params,
-}: {
-  params: Promise<{ uid: string }>;
-}) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ uid: string }> }
+) {
   const { uid } = await params;
   const belief = await getBelief(uid);
   const text = belief?.beliefText?.trim() || 'Belief';
   const { fontSize, lineHeight } = getTextStyle(text.length);
 
-  return new ImageResponse(
+  const response = new ImageResponse(
     (
       <div
         style={{
@@ -52,7 +50,14 @@ export default async function Image({
       </div>
     ),
     {
-      ...size,
+      width: 1200,
+      height: 1200,
+      headers: {
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+        'Content-Type': 'image/png',
+      },
     }
   );
+
+  return response;
 }

@@ -17,6 +17,8 @@ export async function generateMetadata({
     ? truncateForTitle(belief.beliefText)
     : 'Belief';
   const description = 'Stake $2 on this belief — Extracredible';
+  const baseUrl = 'https://extracredible.xyz';
+  const imageUrl = `${baseUrl}/api/og/belief/${encodeURIComponent(uid)}`;
 
   return {
     title: `${title} — Extracredible`,
@@ -25,11 +27,13 @@ export async function generateMetadata({
       title: `${title} — Extracredible`,
       description,
       type: 'website',
+      images: [{ url: imageUrl, width: 1200, height: 1200, alt: title }],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${title} — Extracredible`,
       description,
+      images: [imageUrl],
     },
   };
 }
