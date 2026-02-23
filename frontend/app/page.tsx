@@ -152,6 +152,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
   const [userStakes, setUserStakes] = useState<Record<string, boolean>>({});
   const [userStakeV2, setUserStakeV2] = useState<Record<string, boolean>>({});
   const [loadingBeliefId, setLoadingBeliefId] = useState<string | null>(null);
+  const lastTxTime = useRef<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [showFaucetModal, setShowFaucetModal] = useState(false);
   
@@ -255,14 +256,15 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
     fetchBeliefs();
 
-    // Auto-refresh every 30s so stale data doesn't persist
-    const interval = setInterval(async () => {
-      try {
-        const fresh = await getBeliefs();
-        setBeliefs(fresh);
-      } catch { /* silent */ }
-    }, 30_000);
-    return () => clearInterval(interval);
+    // Re-fetch when user returns to tab (covers "went away, came back" without constant polling).
+    // Skip if a transaction just completed (60s cooldown) to protect optimistic updates.
+    function handleVisibility() {
+      if (document.hidden) return;
+      if (Date.now() - lastTxTime.current < 60_000) return;
+      getBeliefs().then(setBeliefs).catch(() => {});
+    }
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
   }, [initialSort, filterValue]);
 
   // Reset to "popular" if user disconnects while on "wallet" filter
@@ -571,6 +573,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
       setProgress(100);
       setProgressMessage('Staked!');
+      lastTxTime.current = Date.now();
 
       setTimeout(() => {
         setProgress(0);
@@ -687,6 +690,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
 
       setProgress(100);
       setProgressMessage('Unstaked!');
+      lastTxTime.current = Date.now();
 
       setTimeout(() => {
         setProgress(0);
@@ -809,6 +813,7 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
           if (found) {
             setProgress(100);
             setProgressMessage('Belief created!');
+            lastTxTime.current = Date.now();
             setBeliefs(latestBeliefs);
             // Switch to Recent Beliefs to show the new belief at the top
             setSortOption('recent');
