@@ -10,6 +10,23 @@ export type Belief = {
   lastStakedAt: string;
 };
 
+async function subgraphFetch(query: string, variables?: Record<string, unknown>) {
+  const response = await fetch(SUBGRAPH_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    cache: 'no-store',
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await response.json();
+  if (json.errors) {
+    console.error('[subgraph] errors:', json.errors);
+  }
+  if (json.data?._meta) {
+    console.log('[subgraph] indexed block:', json.data._meta.block.number, '| errors:', json.data._meta.hasIndexingErrors);
+  }
+  return json;
+}
+
 export type Stake = {
   id: string;
   staker: string;
@@ -41,23 +58,12 @@ export async function getBeliefs(): Promise<Belief[]> {
         createdAt
         lastStakedAt
       }
+      _meta { block { number } hasIndexingErrors }
     }
   `;
 
   try {
-    const response = await fetch(SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
-    });
-
-    const json = await response.json();
-    
-    if (json.errors) {
-      console.error('Subgraph errors:', json.errors);
-      return [];
-    }
-
+    const json = await subgraphFetch(query);
     return json.data?.beliefs || [];
   } catch (error) {
     console.error('Error fetching beliefs:', error);
@@ -89,19 +95,7 @@ export async function getBelief(uid: string): Promise<Belief | null> {
   `;
 
   try {
-    const response = await fetch(SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: { id: uid } }),
-    });
-
-    const json = await response.json();
-    
-    if (json.errors) {
-      console.error('Subgraph errors:', json.errors);
-      return null;
-    }
-
+    const json = await subgraphFetch(query, { id: uid });
     return json.data?.belief || null;
   } catch (error) {
     console.error('Error fetching belief:', error);
@@ -133,19 +127,7 @@ export async function getBeliefStakes(beliefId: string): Promise<Stake[]> {
   `;
 
   try {
-    const response = await fetch(SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: { beliefId } }),
-    });
-
-    const json = await response.json();
-    
-    if (json.errors) {
-      console.error('Subgraph errors:', json.errors);
-      return [];
-    }
-
+    const json = await subgraphFetch(query, { beliefId });
     return json.data?.stakes || [];
   } catch (error) {
     console.error('Error fetching belief stakes:', error);
@@ -162,7 +144,6 @@ export async function getAccountStakes(address: string): Promise<(Stake & { beli
     return [];
   }
 
-  // Normalize address to lowercase for subgraph query
   const normalizedAddress = address.toLowerCase();
 
   const query = `
@@ -189,19 +170,7 @@ export async function getAccountStakes(address: string): Promise<(Stake & { beli
   `;
 
   try {
-    const response = await fetch(SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables: { staker: normalizedAddress } }),
-    });
-
-    const json = await response.json();
-    
-    if (json.errors) {
-      console.error('Subgraph errors:', json.errors);
-      return [];
-    }
-
+    const json = await subgraphFetch(query, { staker: normalizedAddress });
     return json.data?.stakes || [];
   } catch (error) {
     console.error('Error fetching account stakes:', error);
