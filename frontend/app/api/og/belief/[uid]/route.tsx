@@ -11,21 +11,21 @@ const OG_HEIGHT = 630;
 const SQUARE_SIZE = 630;
 const SQUARE_PADDING = 64;
 
-/** Font sizes tuned for centered layout with 502px usable width (630 - 2×64). */
+/** Font sizes tuned for centered layout with 502px usable width (630 - 2×64). Doubled for Nimbus. */
 function getTextStyle(charCount: number): { fontSize: number; lineHeight: number } {
-  if (charCount <= 0) return { fontSize: 48, lineHeight: 1.2 };
-  if (charCount < 40) return { fontSize: 48, lineHeight: 1.2 };
-  if (charCount < 100) return { fontSize: 36, lineHeight: 1.25 };
-  if (charCount < 180) return { fontSize: 28, lineHeight: 1.3 };
-  if (charCount < 300) return { fontSize: 22, lineHeight: 1.35 };
-  if (charCount < 450) return { fontSize: 18, lineHeight: 1.4 };
-  return { fontSize: 14, lineHeight: 1.45 };
+  if (charCount <= 0) return { fontSize: 96, lineHeight: 1.2 };
+  if (charCount < 40) return { fontSize: 96, lineHeight: 1.2 };
+  if (charCount < 100) return { fontSize: 72, lineHeight: 1.25 };
+  if (charCount < 180) return { fontSize: 56, lineHeight: 1.3 };
+  if (charCount < 300) return { fontSize: 44, lineHeight: 1.35 };
+  if (charCount < 450) return { fontSize: 36, lineHeight: 1.4 };
+  return { fontSize: 28, lineHeight: 1.45 };
 }
 
-/** Load PT Serif from the local public/fonts directory — no network, no timeout risk. */
+/** Load Nimbus Roman No9 L from the local public/fonts directory — no network, no timeout risk. */
 async function loadSerifFont(): Promise<ArrayBuffer | null> {
   try {
-    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'PTSerif-Regular.ttf');
+    const fontPath = path.join(process.cwd(), 'public', 'fonts', 'NimbusRomNo9L-Reg.otf');
     const buffer = await fs.readFile(fontPath);
     return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
   } catch {
@@ -81,7 +81,7 @@ export async function GET(
     const fonts = fontData
       ? [
           {
-            name: 'PTSerif',
+            name: 'Nimbus Roman No9 L',
             data: fontData,
             weight: 400 as const,
             style: 'normal' as const,
@@ -115,7 +115,7 @@ export async function GET(
             <div
               style={{
                 color: '#fff',
-                fontFamily: fonts ? 'PTSerif' : 'serif',
+                fontFamily: fonts ? 'Nimbus Roman No9 L' : 'serif',
                 fontSize,
                 lineHeight,
                 textAlign: 'left',

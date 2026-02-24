@@ -18,7 +18,7 @@ export async function generateMetadata({
     : 'Belief';
   const description = 'Stake $2 on this belief — Extracredible';
   const baseUrl = 'https://extracredible.xyz';
-  const ogImageVersion = 4;
+  const ogImageVersion = 5;
   const imageUrl = `${baseUrl}/api/og/belief/${encodeURIComponent(uid)}?v=${ogImageVersion}`;
 
   return {
