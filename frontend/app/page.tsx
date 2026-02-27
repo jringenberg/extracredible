@@ -983,7 +983,8 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
         onClick={toggleFaucetModal}
         title="Get test funds"
       >
-        $
+        <span className="dollar-glyph" aria-hidden="true">$</span>
+        <span className="dollar-beta" aria-hidden="true">BETA</span>
       </button>
       <div className="nav-fixed nav-right">
         <ConnectButton />
@@ -1014,6 +1015,9 @@ export function HomeContent({ initialSort = 'popular', filterValue }: HomeConten
                   </p>
                   <p className="content">
                     As spam and slop become indistinguishable from human expression, verified statements backed by real cost (even just a little) signal additional (extra) credibility. Extracredible is the smallest, simplest, most narrow expression of that. Staking 2 USDC on a public statement gives it weight. 
+                  </p>
+                  <p className="content">
+                    Extracredible is a BETA release with unaudited contracts (view on <a href="https://github.com/jringenberg/extracredible/blob/main/contracts/BeliefStake.sol" target="_blank" rel="noopener noreferrer">Github</a>).
                   </p>
                 </section>
                 ) : !isConnected ? (

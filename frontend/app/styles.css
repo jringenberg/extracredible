@@ -201,6 +201,32 @@ ul {
   border: none;
   cursor: pointer;
   padding: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.dollar-glyph {
+  position: relative;
+  z-index: 1;
+}
+
+.dollar-beta {
+  position: absolute;
+  top: -1px;
+  right: -10px;
+  z-index: 2;
+  background: var(--color-accent);
+  color: var(--color-white);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9px;
+  line-height: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding: 3px 2px;
+  transform: rotate(12deg);
+  transform-origin: center;
+  pointer-events: none;
 }
 
 /* Column titles — shared between left and right */
