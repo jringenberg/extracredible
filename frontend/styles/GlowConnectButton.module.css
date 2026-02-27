@@ -1,0 +1,125 @@
+/*
+ * GlowConnectButton.module.css
+ *
+ * Physics-driven glow button. All --glow-* CSS vars are updated in real-time
+ * by RAF loops in useWalletButtonGlow.ts via direct DOM writes. The values
+ * declared here are the initial SSR defaults (all zero = invisible glow).
+ *
+ * States driven by data-state attribute:
+ *   idle       — at rest, standard black border/text
+ *   proximate  — cursor near button; glow builds via JS, no color change
+ *   hover      — cursor on button; full glow + blue text/border + blast wave
+ *   pending    — Privy modal open; blue text/border + sinusoidal pulse
+ *   connected  — wallet connected; crisp blue outline
+ *   rejected   — modal dismissed; glow decays to zero, then back to idle
+ */
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+.button {
+  /* Geometry — matches global .btn-cta */
+  height: 2.625rem;
+  padding: 0 1rem;
+  border-radius: 1.125rem;
+
+  /* Visual base */
+  border: 1px solid var(--color-black, #000);
+  background: transparent;
+  color: var(--color-black, #000);
+
+  /* Typography — matches global .btn-cta */
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  /* Layout */
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  /* ── Glow CSS variables ──────────────────────────────────────────────── */
+  /* Defaults: glow is invisible at rest.                                   */
+  --glow-blur: 0px;
+  --glow-spread: 0px;
+  --glow-opacity: 0;
+  --glow-x: 0px;         /* directional horizontal offset */
+  --glow-y: 0px;         /* directional vertical offset   */
+  --blast-x: 50%;        /* blast wave origin X in %      */
+  --blast-y: 50%;        /* blast wave origin Y in %      */
+  --blast-duration: 600ms;
+  --glow-rgb: 0 47 167;  /* Klein Blue — space-separated for rgb(R G B / A) */
+
+  /* Only transition color properties — box-shadow is owned by the RAF loop. */
+  transition: color 0.25s ease, border-color 0.25s ease;
+
+  /* Directional glow: shadow centroid is offset by --glow-x/y toward cursor. */
+  box-shadow:
+    var(--glow-x) var(--glow-y)
+    var(--glow-blur) var(--glow-spread)
+    rgb(var(--glow-rgb) / var(--glow-opacity));
+}
+
+/* ── State: PROXIMATE ───────────────────────────────────────────────────── */
+/* Glow builds via JS-driven RAF writes. No CSS color change yet.           */
+/* (No rules needed — handled entirely by --glow-* var updates.)            */
+
+/* ── States: HOVER / PENDING / CONNECTED — blue text + border ───────────── */
+
+.button[data-state='hover'],
+.button[data-state='pending'],
+.button[data-state='connected'] {
+  color: var(--color-accent, rgb(var(--glow-rgb)));
+  border-color: var(--color-accent, rgb(var(--glow-rgb)));
+}
+
+/* Match sort/filter button hover fill, with no glow shadow contribution. */
+.button[data-state='hover'] {
+  background: transparent;
+  box-shadow: inset 0 0 70px -25px hsl(223 100% 42% / 0.08);
+}
+
+/* ── Blast wave ──────────────────────────────────────────────────────────── */
+/* An expanding ring that plays once when the cursor enters the button.      */
+
+.button::after {
+  content: '';
+  position: absolute;
+  inset: -6px; /* extend beyond border so a thick blurred blast isn't clipped */
+  border-radius: inherit;
+  border: 5px solid rgb(255 255 255 / 0);
+  filter: blur(8px);
+  box-shadow: 0 0 24px rgb(255 255 255 / 0.75);
+  transform: scale(1);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.button[data-state='hover']::after {
+  animation: glowBlast var(--blast-duration) ease-out forwards;
+}
+
+@keyframes glowBlast {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    border-color: rgb(255 255 255 / 1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+    border-color: rgb(255 255 255 / 0);
+  }
+}
+
+/* ── Faucet dark-mode override ───────────────────────────────────────────── */
+/* Matches the global body.faucet-active .btn-cta rule in styles.css.       */
+
+:global(body.faucet-active) .button {
+  color: var(--color-white, #fff) !important;
+  border-color: var(--color-white, #fff) !important;
+}
