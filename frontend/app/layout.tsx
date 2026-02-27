@@ -24,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <meta name="base:app_id" content="69a1ca94dce51e894f9727ca" />
         <Script id="error-suppressor" strategy="beforeInteractive">
           {`
             // Suppress chrome extension errors before anything else loads
