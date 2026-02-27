@@ -212,8 +212,8 @@ ul {
 
 .dollar-beta {
   position: absolute;
-  top: -1px;
-  right: -10px;
+  top: -2px;
+  right: -7px;
   z-index: 2;
   background: var(--color-accent);
   color: var(--color-white);
